@@ -1,0 +1,17 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": [
+    "Job Description is insufficient. It only states 'Visit job URL for full description' which is not acceptable as a job description. A summary or key points of the job responsibilities and requirements should be provided."
+  ],
+  "recommendation": "REWORK"
+}
+```

@@ -1,0 +1,60 @@
+```json
+[
+    {
+        "Service": "Cybersecurity Consulting & Strategy",
+        "Classification": "STRONG FIT",
+        "Justification": "The role's focus on developing and managing information security directly aligns with the need for strategic guidance and consulting. This service is central to enhancing the cybersecurity posture of the company.",
+        "Proof Points": "Direct alignment with strategic development and expansion of information security.",
+        "Delivery Risk": "Low, given the clear alignment with the company's strategic needs.",
+        "Opportunity Score": 9
+    },
+    {
+        "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+        "Classification": "STRONG FIT",
+        "Justification": "Compliance is crucial for digital transformation, ensuring adherence to international standards and regulations, which are key to supporting the strategic development of information security.",
+        "Proof Points": "Directly supports the strategic development of information security with a compliance focus.",
+        "Delivery Risk": "Moderate, due to potential complexity in achieving and maintaining compliance.",
+        "Opportunity Score": 8
+    },
+    {
+        "Service": "Proactive Security Assurance",
+        "Classification": "STRONG FIT",
+        "Justification": "This service is vital for identifying and mitigating security risks proactively, aligning with the need to enhance the company's security posture during digital transformation.",
+        "Proof Points": "Supports the active development of strategies to improve security posture.",
+        "Delivery Risk": "Low, as it involves ongoing engagement and adaptation to emerging threats.",
+        "Opportunity Score": 9
+    },
+    {
+        "Service": "Risk Assessment & GRC",
+        "Classification": "STRONG FIT",
+        "Justification": "Integral to strategic security development, ensuring risks are properly identified, assessed, and managed.",
+        "Proof Points": "Central to risk management as part of enhancing information security.",
+        "Delivery Risk": "Low, given its foundational role in risk management strategies.",
+        "Opportunity Score": 9
+    },
+    {
+        "Service": "Security Training & Awareness",
+        "Classification": "PARTIAL FIT",
+        "Justification": "While important, training and awareness are supportive measures and may not directly drive strategic security outcomes without strong implementation.",
+        "Proof Points": "Supports strategic initiatives through training programs.",
+        "Delivery Risk": "Moderate, as effectiveness depends on the quality and uptake of training programs.",
+        "Opportunity Score": 7
+    },
+    {
+        "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+        "Classification": "PARTIAL FIT",
+        "Justification": "Provides necessary expertise and resources but may not be a long-term solution for strategic development.",
+        "Proof Points": "Enhances information security through additional expertise.",
+        "Delivery Risk": "Moderate, as reliance on external resources can be a temporary measure.",
+        "Opportunity Score": 6
+    },
+    {
+        "Service": "Incident Response & Forensics",
+        "Classification": "GAP",
+        "Justification": "While important for maintaining security integrity, incident response is reactive and may not align with the proactive strategic goals of the company.",
+        "Proof Points": "Ensures company is prepared to handle incidents, but may not directly support strategic goals.",
+        "Delivery Risk": "High, as it involves managing potentially complex and high-stakes situations.",
+        "Opportunity Score": 5
+    }
+]
+```

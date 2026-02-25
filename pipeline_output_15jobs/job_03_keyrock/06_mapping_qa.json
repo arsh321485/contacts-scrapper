@@ -1,0 +1,13 @@
+```json
+{
+  "passed": true,
+  "checklist": {
+    "services_tied_to_requirements": true,
+    "proof_points_present": true,
+    "opportunity_score_exists": true,
+    "min_service_lines_mapped": true
+  },
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis meet all the required criteria. Each service is tied to relevant job requirements with clear proof points provided. All services have an opportunity score, and more than two service lines are mapped to the role requirements. No issues were identified, and the classifications of 'STRONG FIT' and 'PARTIAL FIT' appear appropriate based on the provided justifications."
+}
+```

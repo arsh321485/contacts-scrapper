@@ -1,0 +1,72 @@
+```json
+{
+  "Cybersecurity Consulting & Strategy": {
+    "Classification": "STRONG FIT",
+    "Justification": "The service directly addresses the need for strategic planning and consulting to align with organizational security goals. This aligns well with the requirement to implement and maintain a portfolio of security tools, as well as the overall security risk reduction objective.",
+    "Proof Points": [
+      "Alignment with organizational security goals",
+      "Implementation and maintenance of security tools"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)": {
+    "Classification": "STRONG FIT",
+    "Justification": "Given the company's involvement in the financial industry, regulatory compliance and the need for certifications like ISO 27001 and SOC 2 are critical. This service is essential to ensure ongoing adherence to industry standards.",
+    "Proof Points": [
+      "Financial industry regulations",
+      "Need for ISO 27001 and SOC 2 certifications"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 8
+  },
+  "Proactive Security Assurance": {
+    "Classification": "STRONG FIT",
+    "Justification": "Proactive measures such as vulnerability management and application security testing are crucial for the role described. Continuous security assurance aligns with the need to identify and mitigate vulnerabilities in real-time.",
+    "Proof Points": [
+      "Vulnerability management",
+      "Application security testing"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Risk Assessment & GRC": {
+    "Classification": "STRONG FIT",
+    "Justification": "The focus on overall security risk reduction is well supported by risk assessment and GRC services. These frameworks can effectively manage and mitigate risks, aligning with the business objectives.",
+    "Proof Points": [
+      "Overall security risk reduction",
+      "Integration of security tools into business processes"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Security Training & Awareness": {
+    "Classification": "PARTIAL FIT",
+    "Justification": "While collaboration with other security teams indicates a need for training, the role does not explicitly list this as a primary requirement. Training is supportive but not central to the main objectives.",
+    "Proof Points": [
+      "Collaboration with other security teams"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "Classification": "PARTIAL FIT",
+    "Justification": "The advanced security maturity and specialized role requirements suggest some need for staff augmentation. However, it does not appear to be a primary focus, making it a supportive rather than essential service.",
+    "Proof Points": [
+      "Advanced security maturity",
+      "Specialized roles like vulnerability management"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  "Incident Response & Forensics": {
+    "Classification": "STRONG FIT",
+    "Justification": "Responding to security events is critical, making incident response and forensics a necessary service. This service aligns directly with the requirement to address and investigate security incidents.",
+    "Proof Points": [
+      "Responding to security events"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 8
+  }
+}
+```

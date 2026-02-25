@@ -1,0 +1,61 @@
+```json
+[
+  {
+    "Service Line": "Cybersecurity Consulting & Strategy",
+    "Relevance": "Higher education institutions like Southern New Hampshire University require strategic cybersecurity planning to protect sensitive data and comply with education regulations.",
+    "Job Requirements Addressed": [
+      "Developing cybersecurity strategies for educational programs.",
+      "Ensuring cybersecurity measures are aligned with educational standards and regulations."
+    ],
+    "Engagement Type": "Consulting"
+  },
+  {
+    "Service Line": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Relevance": "The university must comply with U.S. Department of Education regulations and accreditation standards, which includes data protection and privacy compliance.",
+    "Job Requirements Addressed": [
+      "Assisting in achieving and maintaining compliance with educational and data protection regulations."
+    ],
+    "Engagement Type": "Consulting, Audit"
+  },
+  {
+    "Service Line": "Proactive Security Assurance",
+    "Relevance": "Proactively identifying vulnerabilities is crucial in a large educational institution to prevent breaches.",
+    "Job Requirements Addressed": [
+      "Conducting security assessments to ensure the integrity of educational programs and data."
+    ],
+    "Engagement Type": "Consulting, Assessment"
+  },
+  {
+    "Service Line": "Risk Assessment & GRC",
+    "Relevance": "Risk management is essential to handle potential cybersecurity threats in a higher education context.",
+    "Job Requirements Addressed": [
+      "Evaluating risks associated with cybersecurity in education."
+    ],
+    "Engagement Type": "Consulting, Assessment"
+  },
+  {
+    "Service Line": "Security Training & Awareness",
+    "Relevance": "Educating faculty and staff on cybersecurity best practices enhances the security posture of the university.",
+    "Job Requirements Addressed": [
+      "Providing cybersecurity training to faculty and staff."
+    ],
+    "Engagement Type": "Training"
+  },
+  {
+    "Service Line": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Relevance": "Supplementing the university's cybersecurity team with specialized expertise like a vCISO or penetration testers.",
+    "Job Requirements Addressed": [
+      "Augmenting existing cybersecurity staff with specialized roles."
+    ],
+    "Engagement Type": "Staff Augmentation"
+  },
+  {
+    "Service Line": "Incident Response & Forensics",
+    "Relevance": "Preparing for and responding to cybersecurity incidents is critical for minimizing damage and ensuring continuity in educational services.",
+    "Job Requirements Addressed": [
+      "Developing incident response plans and conducting forensic investigations post-incident."
+    ],
+    "Engagement Type": "Consulting, Response"
+  }
+]
+```

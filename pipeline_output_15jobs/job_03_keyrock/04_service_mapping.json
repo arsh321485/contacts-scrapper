@@ -1,0 +1,60 @@
+```json
+{
+  "Cybersecurity Consulting & Strategy": {
+    "Relevance": "The SOC Analyst role in the digital asset industry requires a solid understanding of cybersecurity strategies to protect assets and ensure secure transactions.",
+    "Job Requirements Addressed": [
+      "Understanding and implementing cybersecurity strategies",
+      "Ensuring secure asset trading and transactions"
+    ],
+    "Engagement Type": "Consulting"
+  },
+  "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)": {
+    "Relevance": "The job description highlights a focus on security and compliance, particularly with AML / CFT regulations, necessitating comprehensive compliance and audit services.",
+    "Job Requirements Addressed": [
+      "Ensuring compliance with AML / CFT regulations",
+      "Developing and maintaining compliance frameworks"
+    ],
+    "Engagement Type": "Consulting and Audit"
+  },
+  "Proactive Security Assurance": {
+    "Relevance": "Proactive security measures are crucial for maintaining security in the fast-paced digital asset industry, where the company operates on multiple exchanges.",
+    "Job Requirements Addressed": [
+      "Conducting security assessments and implementing proactive measures",
+      "Ensuring the security of trading platforms"
+    ],
+    "Engagement Type": "Security Assurance"
+  },
+  "Risk Assessment & GRC": {
+    "Relevance": "The company's operation in a high-risk industry like digital assets necessitates robust risk assessment and governance, risk management, and compliance (GRC) frameworks.",
+    "Job Requirements Addressed": [
+      "Identifying, assessing, and mitigating risks",
+      "Implementing GRC frameworks"
+    ],
+    "Engagement Type": "Consulting"
+  },
+  "Security Training & Awareness": {
+    "Relevance": "Regular security training is essential for maintaining a security-conscious culture in a diverse and predominantly remote team.",
+    "Job Requirements Addressed": [
+      "Providing security training to team members",
+      "Enhancing security awareness across the organization"
+    ],
+    "Engagement Type": "Training"
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "Relevance": "The SOC Analyst role aligns with the need for staff augmentation services to support and enhance the company's security operations center.",
+    "Job Requirements Addressed": [
+      "Enhancing SOC capabilities",
+      "Providing additional security expertise and resources"
+    ],
+    "Engagement Type": "Staff Augmentation"
+  },
+  "Incident Response & Forensics": {
+    "Relevance": "Given the company's focus on security, having a robust incident response and forensics capability is crucial for quickly addressing and analyzing security incidents.",
+    "Job Requirements Addressed": [
+      "Developing and executing incident response plans",
+      "Conducting forensic analysis of security incidents"
+    ],
+    "Engagement Type": "Incident Response"
+  }
+}
+```

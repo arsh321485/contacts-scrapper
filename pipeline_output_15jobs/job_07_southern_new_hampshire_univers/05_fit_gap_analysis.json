@@ -1,0 +1,80 @@
+```json
+[
+  {
+    "Service Line": "Cybersecurity Consulting & Strategy",
+    "Classification": "STRONG FIT",
+    "Justification": "Higher education institutions require strategic cybersecurity planning to protect sensitive data and comply with education regulations. This service directly supports the development of cybersecurity strategies tailored for educational programs, ensuring alignment with educational standards.",
+    "Proof Points": [
+      "Direct relevance to educational institutions",
+      "Alignment with strategic cybersecurity planning needs"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service Line": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Classification": "STRONG FIT",
+    "Justification": "Compliance with data protection and privacy regulations is critical for the university's operation. This service addresses the university's need to achieve and maintain compliance with educational and data protection regulations.",
+    "Proof Points": [
+      "Essential for regulatory compliance",
+      "Covers critical data protection standards"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 8
+  },
+  {
+    "Service Line": "Proactive Security Assurance",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While proactive identification of vulnerabilities is important, it may not directly address all strategic needs of educational programs.",
+    "Proof Points": [
+      "Focus on vulnerability identification"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  {
+    "Service Line": "Risk Assessment & GRC",
+    "Classification": "STRONG FIT",
+    "Justification": "Risk management is essential for addressing potential cybersecurity threats, making this service a strong fit for the university's needs.",
+    "Proof Points": [
+      "Critical for managing cybersecurity threats",
+      "Alignment with governance, risk, and compliance needs"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service Line": "Security Training & Awareness",
+    "Classification": "STRONG FIT",
+    "Justification": "Educating faculty and staff on cybersecurity best practices is crucial to enhance the university's security posture.",
+    "Proof Points": [
+      "Direct impact on improving security posture",
+      "Addresses the need for cybersecurity training"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 8
+  },
+  {
+    "Service Line": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While supplementing the cybersecurity team is beneficial, it might not be a primary focus unless there is a specific shortage of expertise.",
+    "Proof Points": [
+      "Provides specialized expertise",
+      "Useful for short-term staffing needs"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  {
+    "Service Line": "Incident Response & Forensics",
+    "Classification": "STRONG FIT",
+    "Justification": "Preparing for and responding to incidents is critical for minimizing damage and ensuring continuity, making this service essential for the university.",
+    "Proof Points": [
+      "Critical for incident preparedness and response",
+      "Supports continuity of educational services"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 8
+  }
+]
+```

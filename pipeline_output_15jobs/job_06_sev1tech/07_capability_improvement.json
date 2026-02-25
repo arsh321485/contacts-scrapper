@@ -1,0 +1,72 @@
+```json
+{
+  "CapabilityImprovementRecommendations": [
+    {
+      "Service": "Security Training & Awareness",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Action": "Training",
+          "Description": "Develop comprehensive security training programs that cover emerging threats and new compliance requirements.",
+          "Priority": "High",
+          "Effort": "Medium"
+        },
+        {
+          "Action": "Certifications",
+          "Description": "Encourage staff to obtain certifications such as Certified Information Systems Security Professional (CISSP) and Certified Information Security Manager (CISM) to enhance skills.",
+          "Priority": "Medium",
+          "Effort": "Medium"
+        },
+        {
+          "Action": "Tooling",
+          "Description": "Invest in learning management systems (LMS) to streamline and track training initiatives.",
+          "Priority": "Medium",
+          "Effort": "Low"
+        }
+      ]
+    },
+    {
+      "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Action": "Hiring",
+          "Description": "Recruit temporary or contract specialists in critical areas such as penetration testing and virtual CISO roles to fill immediate gaps.",
+          "Priority": "High",
+          "Effort": "High"
+        },
+        {
+          "Action": "Partnerships",
+          "Description": "Establish partnerships with specialized security firms to access a wide range of expertise as needed.",
+          "Priority": "Medium",
+          "Effort": "Medium"
+        }
+      ]
+    },
+    {
+      "Service": "Incident Response & Forensics",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Action": "Training",
+          "Description": "Conduct regular incident response drills and tabletop exercises to improve readiness.",
+          "Priority": "High",
+          "Effort": "Medium"
+        },
+        {
+          "Action": "Tooling",
+          "Description": "Implement advanced forensics tools to enhance the capability of analyzing and responding to incidents.",
+          "Priority": "Medium",
+          "Effort": "High"
+        },
+        {
+          "Action": "Certifications",
+          "Description": "Encourage team members to pursue certifications in digital forensics and incident response, such as GIAC Certified Incident Handler (GCIH).",
+          "Priority": "Medium",
+          "Effort": "Medium"
+        }
+      ]
+    }
+  ]
+}
+```

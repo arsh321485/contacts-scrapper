@@ -1,0 +1,13 @@
+```json
+{
+  "passed": true,
+  "checklist": {
+    "services_tied_to_requirements": true,
+    "proof_points_present": true,
+    "opportunity_score_exists": true,
+    "at_least_two_service_lines_mapped": true
+  },
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis is well-aligned with the ISSO role. All services are linked to relevant requirements with appropriate classification justifications and proof points. Opportunity scores are present for all services, and more than two service lines are mapped, indicating a comprehensive analysis. Continue leveraging these insights to address the organization's security strategy and resource needs effectively."
+}
+```

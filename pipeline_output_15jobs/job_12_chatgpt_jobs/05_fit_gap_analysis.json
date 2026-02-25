@@ -1,0 +1,77 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Classification": "STRONG FIT",
+    "Justification": "This service is essential for designing and executing a channel strategy for AI cybersecurity solutions, directly aligning with the strategic consulting needs of the role.",
+    "Proof Points": [
+      "Directly addresses the design and execution of channel strategy.",
+      "Supports acceleration of go-to-market efforts through partnerships."
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While compliance is necessary, the primary focus is on strategic consulting rather than ongoing compliance efforts.",
+    "Proof Points": [
+      "Addresses compliance with data protection regulations.",
+      "Relevant in handling candidate information."
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Classification": "PARTIAL FIT",
+    "Justification": "The focus on AI-driven solutions requires security assurance, but this is more of a support function rather than a primary strategic requirement.",
+    "Proof Points": [
+      "Supports implementation of AI-driven protection solutions."
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Classification": "STRONG FIT",
+    "Justification": "Critical for ensuring that channel strategies do not introduce security risks, aligning well with the need for risk assessment in partnerships.",
+    "Proof Points": [
+      "Directly supports risk assessment for channel partnerships.",
+      "Integral to GRC framework implementation."
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While important, training and awareness are secondary to the strategic consulting and execution of channel strategies.",
+    "Proof Points": [
+      "Ensures partner and stakeholder security training."
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 5
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "Staff augmentation can support scaling efforts but is not a direct strategic fit for the primary goals of channel strategy design.",
+    "Proof Points": [
+      "Supports scaling and executing channel programs."
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Classification": "GAP",
+    "Justification": "While incident response is important, it is not directly aligned with the strategic channel strategy and consulting focus.",
+    "Proof Points": [
+      "Important for trust and rapid response in partnerships."
+    ],
+    "Delivery Risk": "High",
+    "Opportunity Score": 4
+  }
+]
+```

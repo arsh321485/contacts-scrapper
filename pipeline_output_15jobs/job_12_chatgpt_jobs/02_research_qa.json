@@ -1,0 +1,19 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": false
+  },
+  "issues": [
+    "Job Description is incomplete as it only instructs to visit a URL for the full description.",
+    "The Company Name 'ChatGPT Jobs' does not appear to be a legitimate or widely recognized company name.",
+    "The Organization URL seems to point to a job listing on LinkedIn, but it is necessary to verify if 'ChatGPT Jobs' is the actual company offering the position or merely a placeholder."
+  ],
+  "recommendation": "REWORK"
+}
+```

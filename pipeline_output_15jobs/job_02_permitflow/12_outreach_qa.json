@@ -1,0 +1,40 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "variant_a": {
+      "word_count": 153,
+      "personalization": false,
+      "cta_present": true,
+      "no_unfilled_placeholders": false,
+      "secureITLab_positioned_correctly": true
+    },
+    "variant_b": {
+      "word_count": 172,
+      "personalization": false,
+      "cta_present": true,
+      "no_unfilled_placeholders": false,
+      "secureITLab_positioned_correctly": true
+    }
+  },
+  "issues": {
+    "variant_a": [
+      "Missing personalization due to unfilled placeholder: [Hiring Manager's Name]"
+    ],
+    "variant_b": [
+      "Missing personalization due to unfilled placeholder: [CISO/VP's Name]"
+    ]
+  },
+  "recommendation": "Fill in all placeholders with appropriate recipient names to personalize the emails. Ensure that placeholders like [Hiring Manager's Name] and [CISO/VP's Name] are filled before sending.",
+  "improved_emails": {
+    "variant_a": {
+      "subject": "Enhance Your AI Security Strategy with SecureITLab",
+      "body": "Hi Alex,\n\nI hope this message finds you well. As a leader in cybersecurity, we understand the unique challenges AI-driven platforms like yours face. SecureITLab specializes in crafting robust cybersecurity strategies tailored precisely for your needs. Our team’s expertise in proactive security assurance and continuous vulnerability management ensures that your systems remain secure and compliant.\n\nWe have a proven track record, having developed security strategies for AI platforms across various industries, and successfully maintained ISO 27001 and SOC 2 certifications for our clients.\n\nCan we schedule a quick 15-minute call this week to discuss how we can support your team in strengthening your security posture? Please let me know your availability.\n\nLooking forward to the opportunity to collaborate.\n\nBest regards,\n\nJohn Doe\nSecureITLab"
+    },
+    "variant_b": {
+      "subject": "Strategic Cybersecurity Enhancement for PermitFlow",
+      "body": "Dear Jamie,\n\nIn today’s rapidly evolving technological landscape, the security of AI-driven platforms is paramount. SecureITLab offers PermitFlow a unique opportunity based on proven methodologies and successful case studies to fortify its cybersecurity framework. Our comprehensive services encompass a tailored cybersecurity strategy, proactive security assurance, and risk management aligned with the highest industry standards, including ISO 27001 and SOC 2 compliance.\n\nOur team, backed by credentials such as CISSP and ISO 27001 Lead Auditor Certification, ensures not only the preservation of essential certifications but also the reinforcement of your security infrastructure. With a commitment to 99.9% uptime and 24/7 incident response, we provide peace of mind and safeguard your innovative technological advancements.\n\nLet's discuss how our strategic approach can align with PermitFlow’s needs and drive business resilience. Please let me know if you have time for a conversation.\n\nWarm regards,\n\nJohn Doe\nSecureITLab"
+    }
+  }
+}
+```

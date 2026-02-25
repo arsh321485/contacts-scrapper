@@ -1,0 +1,67 @@
+```json
+{
+    "capability_improvement_recommendations": [
+        {
+            "Service": "Security Training & Awareness",
+            "Classification": "PARTIAL FIT",
+            "Recommendations": [
+                {
+                    "Type": "Training",
+                    "Details": "Develop tailored training programs that address specific organizational risks and integrate them into regular employee development plans. Consider gamified learning experiences to increase engagement."
+                },
+                {
+                    "Type": "Certifications",
+                    "Details": "Encourage and sponsor certifications for employees such as Certified Information Systems Security Professional (CISSP) or Certified Information Security Manager (CISM) to elevate internal expertise."
+                },
+                {
+                    "Type": "Tooling",
+                    "Details": "Invest in a Learning Management System (LMS) that tracks progress and completion of security training courses."
+                }
+            ],
+            "Priority": "High"
+        },
+        {
+            "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+            "Classification": "PARTIAL FIT",
+            "Recommendations": [
+                {
+                    "Type": "Hiring",
+                    "Details": "Consider a strategic hire for a full-time CISO if feasible, to build internal leadership capacity and reduce reliance on temporary external resources."
+                },
+                {
+                    "Type": "Partnerships",
+                    "Details": "Form partnerships with specialized cybersecurity staffing firms to ensure quick access to high-quality temporary resources when needed."
+                },
+                {
+                    "Type": "Training",
+                    "Details": "Develop a mentorship program where external experts train and upskill internal staff, creating a more sustainable internal capability."
+                }
+            ],
+            "Priority": "Medium"
+        },
+        {
+            "Service": "Incident Response & Forensics",
+            "Classification": "GAP",
+            "Recommendations": [
+                {
+                    "Type": "Hiring",
+                    "Details": "Hire dedicated incident response and forensics experts to develop a robust internal capability for managing and investigating incidents."
+                },
+                {
+                    "Type": "Training",
+                    "Details": "Implement regular incident response drills and simulations to enhance readiness and response time."
+                },
+                {
+                    "Type": "Tooling",
+                    "Details": "Invest in cutting-edge incident detection and response tools such as SIEM (Security Information and Event Management) systems to improve threat detection."
+                },
+                {
+                    "Type": "Certifications",
+                    "Details": "Certify internal staff in incident response and forensics through programs like GIAC Certified Incident Handler (GCIH) or Certified Computer Forensics Examiner (CCFE)."
+                }
+            ],
+            "Priority": "High"
+        }
+    ]
+}
+```

@@ -1,0 +1,13 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Services tied to requirements",
+    "Proof points present for each service",
+    "Opportunity score exists for each service",
+    "More than two service lines mapped"
+  ],
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis meet all required criteria. Each service is clearly mapped to specific requirements with relevant proof points provided. Opportunity scores are present for all services, and more than two service lines are mapped, ensuring comprehensive coverage of the ISSO role's needs. Continue using this mapping to guide strategic planning and engagement with potential clients."
+}
+```

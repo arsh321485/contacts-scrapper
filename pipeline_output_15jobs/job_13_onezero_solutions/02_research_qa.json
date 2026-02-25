@@ -1,0 +1,17 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": [
+    "Job Description is not provided. It merely states 'Visit job URL for full description', which does not fulfill the requirement of having a job description present in the submission."
+  ],
+  "recommendation": "REWORK"
+}
+```

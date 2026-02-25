@@ -1,0 +1,13 @@
+```json
+{
+    "passed": true,
+    "checklist": {
+        "services_tied_to_requirements": true,
+        "proof_points_present": true,
+        "opportunity_score_exists": true,
+        "at_least_two_service_lines_mapped": true
+    },
+    "issues": [],
+    "recommendation": "All services are appropriately mapped to the client's requirements with clear classifications of fit/gap. Proof points supporting the classification are present, and opportunity scores are provided for each service. The mapping includes more than two service lines ensuring a comprehensive approach to addressing the client's cybersecurity needs. No issues were identified in the mapping and fit/gap analysis."
+}
+```

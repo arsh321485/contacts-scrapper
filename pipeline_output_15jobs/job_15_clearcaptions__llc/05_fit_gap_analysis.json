@@ -1,0 +1,74 @@
+```json
+{
+  "Cybersecurity Consulting & Strategy": {
+    "classification": "STRONG FIT",
+    "justification": "The service directly addresses the need for developing and implementing cybersecurity strategies that align with business objectives, which is crucial for any organization looking to enhance its security posture.",
+    "proof_points": [
+      "Alignment with business objectives",
+      "Strategic planning is a foundational aspect of cybersecurity"
+    ],
+    "delivery_risk": "Low",
+    "opportunity_score": 9
+  },
+  "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)": {
+    "classification": "STRONG FIT",
+    "justification": "Compliance with industry standards is essential for protecting sensitive information and maintaining trust with stakeholders. This service addresses a broad range of compliance needs.",
+    "proof_points": [
+      "Comprehensive coverage of major compliance frameworks",
+      "Critical for regulatory adherence and organizational credibility"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 8
+  },
+  "Proactive Security Assurance": {
+    "classification": "STRONG FIT",
+    "justification": "Proactively identifying vulnerabilities and threats is crucial for maintaining a robust security posture and preventing potential breaches.",
+    "proof_points": [
+      "Regular security assessments help in early threat detection",
+      "Essential for maintaining proactive defense mechanisms"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 8
+  },
+  "Risk Assessment & GRC": {
+    "classification": "STRONG FIT",
+    "justification": "Risk assessment and governance frameworks are key for ensuring organizational resilience and compliance with risk management standards.",
+    "proof_points": [
+      "Comprehensive risk management is vital for asset protection",
+      "GRC frameworks support ongoing compliance and governance"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 9
+  },
+  "Security Training & Awareness": {
+    "classification": "PARTIAL FIT",
+    "justification": "While training and awareness are important, they may not directly impact the strategic planning or compliance needs, but enhance overall security culture.",
+    "proof_points": [
+      "Improves staff awareness and reduces human error",
+      "Supports but does not directly fulfill compliance or strategy"
+    ],
+    "delivery_risk": "Low",
+    "opportunity_score": 6
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "classification": "PARTIAL FIT",
+    "justification": "Augmenting staff with cybersecurity professionals addresses skill gaps but is more tactical than strategic, serving as a support mechanism.",
+    "proof_points": [
+      "Addresses immediate skill gaps and resource needs",
+      "Supports existing teams rather than fundamentally changing strategy"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 7
+  },
+  "Incident Response & Forensics": {
+    "classification": "STRONG FIT",
+    "justification": "Incident response is crucial for minimizing impact and ensuring quick recovery, which is a strategic priority for any organization.",
+    "proof_points": [
+      "Reduces impact of security incidents",
+      "Supports overall resilience and recovery strategies"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 8
+  }
+}
+```

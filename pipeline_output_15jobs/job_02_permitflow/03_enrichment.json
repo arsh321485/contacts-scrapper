@@ -1,0 +1,15 @@
+```json
+{
+  "Job Role": "Security Engineer",
+  "Job Description": "PermitFlow is redefining how America builds. We’re an applied AI company serving the nation’s builders, tackling one of the largest information challenges in the economy: understanding what can be built, where, and how. Our AI agent workforce helps the fastest-growing construction companies navigate everything from permitting and licensing to inspections and project closeouts – accelerating housing, clean-energy, and infrastructure development across the country. Despite being a $1.6T industry, construction still suffers from massive delays, wasted capital, and lost opportunity.",
+  "Company Name": "PermitFlow",
+  "Organization URL": "https://www.permitflow.com",
+  "Location": "New York City",
+  "Company Industry": "Construction Technology",
+  "Company Size": "Mid-size",
+  "Regulatory Environment": "Construction industry regulations, AHJ compliance",
+  "Certifications": ["SOC2", "ISO 27001"],
+  "Tech Stack": "AI-driven platforms, CRM integration",
+  "Security Maturity": "Enterprise-level security, SOC2 & ISO 27001 certified"
+}
+```

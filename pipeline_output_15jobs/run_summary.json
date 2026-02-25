@@ -1,0 +1,211 @@
+{
+  "run_at": "2026-02-24T15:06:15.606072+00:00",
+  "total_jobs": 15,
+  "pipeline_ok": 15,
+  "pipeline_failed": 0,
+  "contacts_found": 133,
+  "total_min": 40.5,
+  "jobs": [
+    {
+      "job_number": 1,
+      "company": "Bounteous",
+      "role": "Information Security Operations Engineer",
+      "pipeline_ok": true,
+      "pipeline_min": 2.2,
+      "opp_score": null,
+      "contacts_found": 21,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io",
+        "People Data Labs"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 2,
+      "company": "PermitFlow",
+      "role": "Security Engineer",
+      "pipeline_ok": true,
+      "pipeline_min": 1.9,
+      "opp_score": null,
+      "contacts_found": 4,
+      "contact_sources": [
+        "Hunter.io",
+        "People Data Labs"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 3,
+      "company": "Keyrock",
+      "role": "SOC Analyst",
+      "pipeline_ok": true,
+      "pipeline_min": 2.0,
+      "opp_score": null,
+      "contacts_found": 12,
+      "contact_sources": [
+        "Minelead.io",
+        "People Data Labs",
+        "theorg.com"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 4,
+      "company": "Flix",
+      "role": "Senior Cybersecurity & Compliance Specialist (m/f/d)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.4,
+      "opp_score": null,
+      "contacts_found": 10,
+      "contact_sources": [
+        "People Data Labs"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 5,
+      "company": "RD Service",
+      "role": "Senior Information Security Lead - 115k.",
+      "pipeline_ok": true,
+      "pipeline_min": 2.3,
+      "opp_score": null,
+      "contacts_found": 11,
+      "contact_sources": [
+        "Minelead.io",
+        "People Data Labs"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 6,
+      "company": "Sev1Tech",
+      "role": "DevSecOps Engineer (Senior)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.5,
+      "opp_score": null,
+      "contacts_found": 11,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 7,
+      "company": "Southern New Hampshire University",
+      "role": "Online Adjunct Faculty - Cybersecurity",
+      "pipeline_ok": true,
+      "pipeline_min": 2.1,
+      "opp_score": null,
+      "contacts_found": 11,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 8,
+      "company": "CrowdStrike",
+      "role": "Threat Hunting Consultant - SkillBridge (Remote)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.0,
+      "opp_score": null,
+      "contacts_found": 11,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io"
+      ],
+      "coverage_score": null
+    },
+    {
+      "job_number": 9,
+      "company": "Lincoln Financial",
+      "role": "Sr Analyst, Cyber Security Engineering (Remote)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.9,
+      "opp_score": null,
+      "contacts_found": 0,
+      "contact_sources": [],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 10,
+      "company": "Alluvionic Inc.",
+      "role": "Virtual Chief Information Security Officer (vCISO) \u2013 TS Cleared (1099)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.1,
+      "opp_score": null,
+      "contacts_found": 10,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io"
+      ],
+      "coverage_score": null
+    },
+    {
+      "job_number": 11,
+      "company": "Women of Color on the Move",
+      "role": "Chief Information Security Officer (CISO), Board Member (Three-Year Term)- Remote 2026-2028",
+      "pipeline_ok": true,
+      "pipeline_min": 2.1,
+      "opp_score": null,
+      "contacts_found": 0,
+      "contact_sources": [],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 12,
+      "company": "ChatGPT Jobs",
+      "role": "Senior Director of Channel Sales, AI cybersecurity, Remote",
+      "pipeline_ok": true,
+      "pipeline_min": 1.9,
+      "opp_score": null,
+      "contacts_found": 0,
+      "contact_sources": [],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 13,
+      "company": "OneZero Solutions",
+      "role": "Information Systems Security Officer (ISSO) III (Remote)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.0,
+      "opp_score": null,
+      "contacts_found": 10,
+      "contact_sources": [
+        "Hunter.io"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 14,
+      "company": "OneZero Solutions",
+      "role": "Information Systems Security Officer (ISSO) II (Remote)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.3,
+      "opp_score": null,
+      "contacts_found": 11,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io"
+      ],
+      "coverage_score": 0
+    },
+    {
+      "job_number": 15,
+      "company": "ClearCaptions, LLC",
+      "role": "Information Security Architect (100% Remote)",
+      "pipeline_ok": true,
+      "pipeline_min": 2.2,
+      "opp_score": null,
+      "contacts_found": 11,
+      "contact_sources": [
+        "Hunter.io",
+        "Minelead.io"
+      ],
+      "coverage_score": 0
+    }
+  ]
+}

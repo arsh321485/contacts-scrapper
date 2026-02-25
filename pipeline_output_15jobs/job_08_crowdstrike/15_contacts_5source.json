@@ -1,0 +1,112 @@
+{
+  "status": "success",
+  "company": "CrowdStrike",
+  "domain": "crowdstrike.com",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io"
+  ],
+  "total_found": 11,
+  "contacts": [
+    {
+      "name": "Steve Kreger",
+      "title": "Director of Engineering",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/steve-kreger-58111bb",
+      "email": "steve.kreger@crowdstrike.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Nicolas Martinez",
+      "title": "Sales Operations Director",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/nicolasmartinez",
+      "email": "nicolas.martinez@crowdstrike.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Kirby Koster",
+      "title": "Senior Director of Engineering",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/kirbykostermn",
+      "email": "kirby.koster@crowdstrike.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Christian Mauri",
+      "title": "Director of Risk Management",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/cmauri76",
+      "email": "christian.mauri@crowdstrike.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Lisa Matthies",
+      "title": "Director of Talent Acquisition",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/lmatthies",
+      "email": "lisa.matthies@crowdstrike.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Faraz Jamal",
+      "title": "Director of Product",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/fjamal15",
+      "email": "faraz.jamal@crowdstrike.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Jeffrey Cummings",
+      "title": "Senior Talent Acquisition Partner",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/jeffreywcummings",
+      "email": "jeffrey.cummings@crowdstrike.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Drew Rumbel",
+      "title": "Business Partner",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/drew-rumbel-1b6992185",
+      "email": "drew.rumbel@crowdstrike.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Pallavi Patil",
+      "title": "Procurement Manager",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/pallavi-patil-083b84bb",
+      "email": "pallavi.patil@crowdstrike.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Megan Johnson",
+      "title": "Senior Employee Relations Manager",
+      "company": "CrowdStrike",
+      "linkedin_url": "https://www.linkedin.com/in/megan-johnson-37591a80",
+      "email": "megan.johnson@crowdstrike.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "CrowdStrike",
+      "linkedin_url": "",
+      "email": "theresa.pines@crowdstrike.com",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

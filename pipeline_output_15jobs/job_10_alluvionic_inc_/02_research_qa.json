@@ -1,0 +1,18 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": [
+    "Job Description: The description provided is insufficient as it merely instructs to visit a URL for full details.",
+    "Organization URL: The URL provided is a LinkedIn job posting link, which is acceptable as a source, but it would be beneficial if the description included more detailed information directly."
+  ],
+  "recommendation": "REWORK"
+}
+```

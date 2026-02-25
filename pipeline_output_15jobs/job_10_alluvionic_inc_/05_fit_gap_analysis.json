@@ -1,0 +1,81 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Classification": "STRONG FIT",
+    "Justification": "This service directly aligns with the core responsibilities of a vCISO, particularly in the defense and space manufacturing sector, where strategic alignment of cybersecurity with business goals is critical.",
+    "Proof Points": [
+      "Direct involvement in developing cybersecurity policies",
+      "Essential for strategic decision-making"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While compliance is crucial, the specific requirement for ITAR and DFARS compliance in the defense sector may not be fully addressed by generic standards like ISO 27001 or SOC 2.",
+    "Proof Points": [
+      "Regulatory compliance is essential in the defense industry",
+      "May require additional focus on specific defense regulations"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Classification": "STRONG FIT",
+    "Justification": "Proactive risk management is a key responsibility of the vCISO, especially in a sector handling sensitive information.",
+    "Proof Points": [
+      "Proactive risk identification is critical",
+      "Focus on preventing breaches aligns with vCISO role"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Classification": "STRONG FIT",
+    "Justification": "Risk assessment and management of GRC initiatives are fundamental to the vCISO role, particularly in high-risk sectors like defense.",
+    "Proof Points": [
+      "Regular risk assessments are mandatory",
+      "GRC management aligns with organizational objectives"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While training is important, it may not be the primary focus of a vCISO whose main role is strategic and consultative.",
+    "Proof Points": [
+      "Training enhances security culture",
+      "May not be the direct responsibility of a vCISO"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "STRONG FIT",
+    "Justification": "Providing leadership in cybersecurity strategy and operations is a direct extension of the vCISO role.",
+    "Proof Points": [
+      "Direct alignment with vCISO service",
+      "Enhances strategic and operational guidance"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 10
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Classification": "STRONG FIT",
+    "Justification": "Incident response planning and management are critical tasks for a vCISO, especially in managing cybersecurity incidents effectively.",
+    "Proof Points": [
+      "Essential for managing and mitigating incidents",
+      "Aligns with vCISO responsibilities"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 8
+  }
+]
+```

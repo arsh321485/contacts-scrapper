@@ -1,0 +1,18 @@
+```json
+{
+  "Job Role": "Chief Information Security Officer (CISO), Board Member",
+  "Job Description": "Women of Color On The Move (WOCOTM) is a nonprofit organization focused on empowering historically marginalized communities by advancing health equity, economic empowerment, education, and social justice. The CISO role involves strategic leadership for cybersecurity, information security, and data protection programs, supporting risk management and regulatory compliance. Key responsibilities include developing cybersecurity strategies, managing risks, ensuring data protection, and collaborating with leadership.",
+  "Company Name": "Women of Color on the Move",
+  "Organization URL": "https://www.womenofcoloronthemove.org",
+  "Location": "Sacramento County, CA",
+  "Industry": "Non-profit Organization, Civic and Social Organizations",
+  "Company Size": "Small",
+  "Regulatory Environment": "Non-profit sector regulations, Data privacy laws compliance, Grant-related security requirements.",
+  "Certifications": [
+    "Certified Information Systems Security Professional (CISSP)",
+    "Certified Information Security Manager (CISM)"
+  ],
+  "Tech Stack": "Not explicitly detailed, but likely involves typical non-profit tech solutions for data management and cybersecurity.",
+  "Security Maturity": "Focus on proactive risk management and strong governance in cybersecurity, with an emphasis on policy development, threat mitigation, and compliance."
+}
+```

@@ -1,0 +1,17 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": {
+    "Job Description": "The job description is not provided and refers to visiting a URL for more information."
+  },
+  "recommendation": "REWORK"
+}
+```

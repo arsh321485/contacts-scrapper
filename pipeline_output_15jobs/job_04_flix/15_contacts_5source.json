@@ -1,0 +1,172 @@
+{
+  "status": "success",
+  "company": "Flix",
+  "domain": "flixbus.at",
+  "sources_tried": [
+    "People Data Labs"
+  ],
+  "total_found": 10,
+  "contacts": [
+    {
+      "name": "mick dreeling",
+      "title": "director - games data science and engineering",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/mdreeling",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "mick.dreeling@flixbus.at",
+        "mick@flixbus.at",
+        "mdreeling@flixbus.at",
+        "mickdreeling@flixbus.at",
+        "dreeling@flixbus.at"
+      ]
+    },
+    {
+      "name": "heather tilert",
+      "title": "director, kids + preschool original series",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/heather-tilert-3bb38a3",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "heather.tilert@flixbus.at",
+        "heather@flixbus.at",
+        "htilert@flixbus.at",
+        "heathertilert@flixbus.at",
+        "tilert@flixbus.at"
+      ]
+    },
+    {
+      "name": "emily barton",
+      "title": "director, esg",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/bartonemily",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "emily.barton@flixbus.at",
+        "emily@flixbus.at",
+        "ebarton@flixbus.at",
+        "emilybarton@flixbus.at",
+        "barton@flixbus.at"
+      ]
+    },
+    {
+      "name": "sarah springwater",
+      "title": "director of story",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/sarah-nalle-springwater-40bb204a",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "sarah.springwater@flixbus.at",
+        "sarah@flixbus.at",
+        "sspringwater@flixbus.at",
+        "sarahspringwater@flixbus.at",
+        "springwater@flixbus.at"
+      ]
+    },
+    {
+      "name": "dan pettit",
+      "title": "production director",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/dan-pettit-674aa95",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "dan.pettit@flixbus.at",
+        "dan@flixbus.at",
+        "dpettit@flixbus.at",
+        "danpettit@flixbus.at",
+        "pettit@flixbus.at"
+      ]
+    },
+    {
+      "name": "ian mcewan",
+      "title": "director, game production operations",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/mcewanian",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "ian.mcewan@flixbus.at",
+        "ian@flixbus.at",
+        "imcewan@flixbus.at",
+        "ianmcewan@flixbus.at",
+        "mcewan@flixbus.at"
+      ]
+    },
+    {
+      "name": "allison mcmanus",
+      "title": "director, series publicity",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/allison-mcmanus-41128512",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "allison.mcmanus@flixbus.at",
+        "allison@flixbus.at",
+        "amcmanus@flixbus.at",
+        "allisonmcmanus@flixbus.at",
+        "mcmanus@flixbus.at"
+      ]
+    },
+    {
+      "name": "chris carter",
+      "title": "director, business & legal affairs, original series",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/chris-carter-2b4b806",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "chris.carter@flixbus.at",
+        "chris@flixbus.at",
+        "ccarter@flixbus.at",
+        "chriscarter@flixbus.at",
+        "carter@flixbus.at"
+      ]
+    },
+    {
+      "name": "karthik chandrashekar",
+      "title": "director, data science & engineering",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/ckarthiksriram",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "karthik.chandrashekar@flixbus.at",
+        "karthik@flixbus.at",
+        "kchandrashekar@flixbus.at",
+        "karthikchandrashekar@flixbus.at",
+        "chandrashekar@flixbus.at"
+      ]
+    },
+    {
+      "name": "sharon cammisa",
+      "title": "chief commercial officer (cco)",
+      "company": "Flix",
+      "linkedin_url": "linkedin.com/in/sharon-cammisa-b69ba83",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "sharon.cammisa@flixbus.at",
+        "sharon@flixbus.at",
+        "scammisa@flixbus.at",
+        "sharoncammisa@flixbus.at",
+        "cammisa@flixbus.at"
+      ]
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

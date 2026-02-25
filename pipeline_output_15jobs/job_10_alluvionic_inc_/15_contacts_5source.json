@@ -1,0 +1,103 @@
+{
+  "status": "success",
+  "company": "Alluvionic Inc.",
+  "domain": "alluvionic.com",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io"
+  ],
+  "total_found": 10,
+  "contacts": [
+    {
+      "name": "Bobby Padilla",
+      "title": "Director of Information Security",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "https://www.linkedin.com/in/bobby-padilla-51871541",
+      "email": "bpadilla@alluvionic.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:90%)"
+    },
+    {
+      "name": "Elizabeth Huy",
+      "title": "Director Of Service",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "",
+      "email": "ehuy@alluvionic.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Ricardo Romeu",
+      "title": "Vice President of Engineering",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "https://www.linkedin.com/in/ricardoromeu",
+      "email": "rromeu@alluvionic.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Floyd Capistrano",
+      "title": "Vice President of Governance, Risk, and Compliance",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "https://www.linkedin.com/in/floyd-capistrano-mba-pmp-899a7030",
+      "email": "fcapistrano@alluvionic.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Robyn Zampella",
+      "title": "Vice President of Enterprise Programs",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "https://www.linkedin.com/in/robyn-zampella-pmp",
+      "email": "rzampella@alluvionic.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Wendy Romeu",
+      "title": "CEO",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "https://www.linkedin.com/in/wendyromeu",
+      "email": "wromeu@alluvionic.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Jason Souza",
+      "title": "Chief Growth Officer",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "https://www.linkedin.com/in/jason-souza-pmp-66738938",
+      "email": "jsouza@alluvionic.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:91%)"
+    },
+    {
+      "name": "Kelli Klinger",
+      "title": "Unknown",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "",
+      "email": "kklinger@alluvionic.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Jason Havel",
+      "title": "Process Improvement",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "",
+      "email": "jhavel@alluvionic.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:91%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "Alluvionic Inc.",
+      "linkedin_url": "",
+      "email": "amela@alluvionic.com",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

@@ -1,0 +1,81 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Classification": "STRONG FIT",
+    "Justification": "This service directly aligns with Flix's need to shape and maintain its information and cybersecurity program, ensuring strategic alignment with business goals. The consulting engagement type supports the necessary strategic guidance.",
+    "Proof Points": [
+      "Strategic guidance is crucial for aligning cybersecurity efforts with business goals.",
+      "Flix operates within a tech-driven approach in a large multinational operation."
+    ],
+    "Delivery Risk": "Low. Consulting engagements are typically flexible and can be tailored to client needs.",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Classification": "STRONG FIT",
+    "Justification": "Flix's operations across multiple continents expose it to various regulatory requirements, making compliance and audit services essential to ensure adherence.",
+    "Proof Points": [
+      "Flix is subject to GDPR and potentially other international regulations.",
+      "The service addresses the need for maintaining compliance with international regulations."
+    ],
+    "Delivery Risk": "Medium. Regulatory environments can be complex, and requirements frequently change.",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Classification": "STRONG FIT",
+    "Justification": "Proactive security measures are crucial in a tech-driven environment, where identifying and mitigating vulnerabilities helps maintain robust security.",
+    "Proof Points": [
+      "Ensures robust security measures in a tech-driven environment.",
+      "Aligns with the need to shape cybersecurity programs with proactive measures."
+    ],
+    "Delivery Risk": "Medium. Requires continuous updates and adaptation to new threats.",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Classification": "STRONG FIT",
+    "Justification": "Given Flix's large scale and international operations, thorough risk management and governance are necessary to protect its assets and reputation.",
+    "Proof Points": [
+      "Flix operates within a large, multinational operation with a focus on risk management.",
+      "The service is vital for maintaining comprehensive information security governance."
+    ],
+    "Delivery Risk": "Medium. Establishing effective GRC frameworks can be complex.",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While employee engagement and awareness are important, this service is more of a supportive role in the overarching cybersecurity program rather than a primary driver.",
+    "Proof Points": [
+      "Contributes to shaping and maintaining the cybersecurity program through employee engagement.",
+      "Ensures employees are aware of security protocols and compliance needs."
+    ],
+    "Delivery Risk": "Low. Training can be rolled out effectively with the right resources and planning.",
+    "Opportunity Score": 7
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While additional expertise can enhance Flix's cybersecurity capabilities, it is contingent on existing team integrations and budget considerations.",
+    "Proof Points": [
+      "Supports the CISO organization with specialized expertise.",
+      "Enhances the company's cybersecurity program."
+    ],
+    "Delivery Risk": "Medium. Dependent on successful integration of external expertise with internal teams.",
+    "Opportunity Score": 6
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Classification": "STRONG FIT",
+    "Justification": "Given the scale and scope of Flix's operations, being prepared for security incidents is critical, making this a necessary service to ensure readiness and effective response.",
+    "Proof Points": [
+      "Maintains and prepares for incident response as part of shaping the cybersecurity program.",
+      "Ensures readiness for potential cybersecurity incidents."
+    ],
+    "Delivery Risk": "Medium. Requires well-established processes and quick response capabilities.",
+    "Opportunity Score": 8
+  }
+]
+```

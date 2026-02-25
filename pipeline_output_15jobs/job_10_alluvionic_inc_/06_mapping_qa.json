@@ -1,0 +1,13 @@
+```json
+{
+  "passed": true,
+  "checklist": {
+    "services_tied_to_requirements": true,
+    "proof_points_present": true,
+    "opportunity_score_exists": true,
+    "at_least_two_service_lines_mapped": true
+  },
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis have been validated successfully. All services are appropriately tied to the requirements of the vCISO role, and each has clear proof points and opportunity scores. Multiple service lines are mapped to ensure comprehensive coverage of the role's responsibilities."
+}
+```

@@ -1,0 +1,13 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Services are correctly tied to specific requirements.",
+    "Proof points for each service are present and relevant.",
+    "Opportunity scores are provided for all services.",
+    "At least two service lines are mapped to the job role requirements."
+  ],
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis meet the required criteria. Each service is clearly linked with relevant requirements, backed by appropriate proof points. Opportunity scores are included for all services, indicating their potential impact and relevance. Additionally, multiple service lines are mapped, ensuring a comprehensive coverage of the job role's needs. No further action is required."
+}
+```

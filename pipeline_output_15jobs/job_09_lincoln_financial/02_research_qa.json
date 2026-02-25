@@ -1,0 +1,17 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": {
+    "Job Description": "The job description field contains placeholder text 'Visit job URL for full description' instead of a detailed description of the job role and responsibilities."
+  },
+  "recommendation": "REWORK"
+}
+```

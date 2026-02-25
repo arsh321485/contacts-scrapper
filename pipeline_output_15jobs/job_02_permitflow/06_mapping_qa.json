@@ -1,0 +1,13 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Services are tied to specific job requirements",
+    "Proof points are present for each service",
+    "Opportunity scores are provided for all services",
+    "At least two service lines are mapped"
+  ],
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis are well-aligned with the job requirements of PermitFlow. Each service has clear proof points, and opportunity scores are assigned appropriately. The mapping covers more than two service lines, ensuring comprehensive coverage of PermitFlow's needs. No issues found."
+}
+```

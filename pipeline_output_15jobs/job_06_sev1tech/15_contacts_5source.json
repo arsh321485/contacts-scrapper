@@ -1,0 +1,112 @@
+{
+  "status": "success",
+  "company": "Sev1Tech",
+  "domain": "sev1tech.com",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io"
+  ],
+  "total_found": 11,
+  "contacts": [
+    {
+      "name": "Greg Dobson",
+      "title": "Program Director",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/greg-dobson-5715b95",
+      "email": "greg.dobson@sev1tech.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:97%)"
+    },
+    {
+      "name": "Dina Benavides",
+      "title": "Director of Accounting",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/dina-benavides-59612b250",
+      "email": "dina.benavides@sev1tech.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Edward Leary",
+      "title": "Director",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/edward-leary-37576863",
+      "email": "edward.leary@sev1tech.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Chris Kinslow",
+      "title": "Director of Operations",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/chris-kinslow-9963715b",
+      "email": "chris.kinslow@sev1tech.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Robert Lohfeld",
+      "title": "Chief Executive Officer",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/bob01",
+      "email": "robert.lohfeld@sev1tech.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Lisa Anderson",
+      "title": "Chief Human Resources Officer",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/lisa-anderson-sphr-shrm-scp-cpc-1899634",
+      "email": "lisa.anderson@sev1tech.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Meddeb Omar",
+      "title": "Vice President",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/meddeb-omar-4927961a2",
+      "email": "david.clement@sev1tech.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Mary Ogles",
+      "title": "Chief of Staff",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/mary-ogles-437598172",
+      "email": "mary.ogles@sev1tech.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Brian Wells",
+      "title": "HR Business Partner",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/brian-wells-074777215",
+      "email": "brian.wells@sev1tech.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Brian Mcintyre",
+      "title": "Executive Vice President",
+      "company": "Sev1Tech",
+      "linkedin_url": "https://www.linkedin.com/in/mcintyrebrian",
+      "email": "brian.mcintyre@sev1tech.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "Sev1Tech",
+      "linkedin_url": "",
+      "email": "katie.toth@sev1tech.com",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

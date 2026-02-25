@@ -1,0 +1,67 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Relevance": "As Flix is shaping and maintaining its information and cybersecurity program, strategic guidance is crucial for aligning cybersecurity efforts with business goals.",
+    "Job Requirements Addressed": [
+      "Help shape and maintain the company's information and cybersecurity program",
+      "Operate within a tech-driven approach in a large multinational operation"
+    ],
+    "Engagement Type": "Consulting engagement to develop and refine cybersecurity strategies and initiatives."
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Relevance": "Flix is subject to GDPR and potentially other international regulations, necessitating compliance and audit services to ensure adherence.",
+    "Job Requirements Addressed": [
+      "Operate across 4 continents and 45 countries with likely exposure to GDPR and other regulatory requirements",
+      "Maintain compliance with international travel, transportation regulations, and data protection laws"
+    ],
+    "Engagement Type": "Compliance audits and ongoing advisory services to ensure regulatory adherence."
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Relevance": "Ensuring robust security measures in a tech-driven environment is essential, requiring proactive assessments and improvements.",
+    "Job Requirements Addressed": [
+      "Maintain a tech-driven approach with modern security practices",
+      "Shape cybersecurity programs with proactive measures"
+    ],
+    "Engagement Type": "Security assessments and penetration testing to identify and mitigate potential vulnerabilities."
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Relevance": "Flix's large scale and international operations necessitate thorough risk management and governance to protect its assets and reputation.",
+    "Job Requirements Addressed": [
+      "Operate within a large, multinational operation with a focus on risk management",
+      "Shape and maintain comprehensive information security governance"
+    ],
+    "Engagement Type": "Risk assessments and GRC framework implementation to manage cybersecurity risks effectively."
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Relevance": "To successfully implement cybersecurity programs, employees must be aware of security best practices and compliance requirements.",
+    "Job Requirements Addressed": [
+      "Contribute to shaping and maintaining the cybersecurity program through employee engagement",
+      "Ensure employees are aware of security protocols and compliance needs"
+    ],
+    "Engagement Type": "Conducting security awareness training sessions and workshops for employees."
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Relevance": "Flix may require additional expertise to support its CISO organization and bolster its cybersecurity capabilities.",
+    "Job Requirements Addressed": [
+      "Join the Chief Information Security Officer (CISO) organization",
+      "Enhance the company's cybersecurity program with additional expertise"
+    ],
+    "Engagement Type": "Providing temporary or ongoing staffing solutions for specialized cybersecurity roles."
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Relevance": "Given the size and scope of Flix's operations, being prepared for potential security incidents and having a response plan is critical.",
+    "Job Requirements Addressed": [
+      "Maintain and prepare for incident response as part of shaping the cybersecurity program",
+      "Ensure readiness for potential cybersecurity incidents"
+    ],
+    "Engagement Type": "Developing and implementing incident response plans and conducting forensic analysis when required."
+  }
+]
+```

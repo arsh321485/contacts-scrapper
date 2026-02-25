@@ -1,0 +1,18 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": {
+    "Job Description": "The job description is inadequate as it only directs to visit the job URL for the full description. There should be a brief summary provided in the context.",
+    "No hallucinations": "While there are no hallucinations, the lack of a description might indicate a gap in the provided data."
+  },
+  "recommendation": "REWORK"
+}
+```

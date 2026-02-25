@@ -1,0 +1,74 @@
+```json
+{
+  "Cybersecurity Consulting & Strategy": {
+    "Classification": "STRONG FIT",
+    "Justification": "The service directly aligns with the need for developing robust cybersecurity strategies to protect digital assets and ensure secure transactions, which are core responsibilities in the SOC Analyst role.",
+    "Proof Points": [
+      "Solid understanding of cybersecurity strategies",
+      "Ensuring secure asset trading and transactions"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)": {
+    "Classification": "PARTIAL FIT",
+    "Justification": "While compliance services are relevant, the focus on ISO 27001, SOC 2, GDPR, and HIPAA may not fully align with the digital asset industry's specific AML / CFT needs.",
+    "Proof Points": [
+      "Ensuring compliance with AML / CFT regulations",
+      "Developing and maintaining compliance frameworks"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  "Proactive Security Assurance": {
+    "Classification": "STRONG FIT",
+    "Justification": "Proactive security measures are crucial for maintaining security in the fast-paced digital asset industry, addressing key job requirements for the SOC Analyst role.",
+    "Proof Points": [
+      "Conducting security assessments and implementing proactive measures",
+      "Ensuring the security of trading platforms"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Risk Assessment & GRC": {
+    "Classification": "STRONG FIT",
+    "Justification": "The need for robust risk assessment and GRC frameworks directly supports the high-risk environment of digital assets, aligning well with the role's requirements.",
+    "Proof Points": [
+      "Identifying, assessing, and mitigating risks",
+      "Implementing GRC frameworks"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Security Training & Awareness": {
+    "Classification": "PARTIAL FIT",
+    "Justification": "While security training is important, its impact may be indirect compared to other more critical services directly affecting the SOC Analyst role's core responsibilities.",
+    "Proof Points": [
+      "Providing security training to team members",
+      "Enhancing security awareness across the organization"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "Classification": "STRONG FIT",
+    "Justification": "Staff augmentation services are highly relevant as they enhance the SOC capabilities and provide additional expertise, directly supporting the SOC Analyst role.",
+    "Proof Points": [
+      "Enhancing SOC capabilities",
+      "Providing additional security expertise and resources"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  "Incident Response & Forensics": {
+    "Classification": "STRONG FIT",
+    "Justification": "Incident response and forensics are critical for quickly addressing security incidents, aligning closely with the SOC Analyst responsibilities.",
+    "Proof Points": [
+      "Developing and executing incident response plans",
+      "Conducting forensic analysis of security incidents"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  }
+}
+```

@@ -1,0 +1,17 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Cybersecurity Consulting & Strategy capability is clearly defined as tailored for AI-driven platforms.",
+    "Compliance & Audit services include specific frameworks like ISO 27001 and SOC 2, ensuring clarity.",
+    "Proactive Security Assurance describes continuous assessments and vulnerability management.",
+    "Risk Assessment & GRC specifically addresses AI systems, aligning with industry needs."
+  ],
+  "issues": [
+    "The executive value proposition uses terms like 'unparalleled opportunity' which are subjective and could be more specific."
+  ],
+  "recommendation": [
+    "Replace 'unparalleled opportunity' with 'unique opportunity based on proven methodologies and successful case studies' to enhance specificity."
+  ]
+}
+```

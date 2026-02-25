@@ -1,0 +1,17 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": true,
+    "Company Name": true,
+    "Organization URL": false,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": {
+    "Organization URL": "The URL provided (https://remoteOK.com/remote-jobs/remote-soc-analyst-keyrock-1130231) appears to be a job listing link rather than the official company website or a direct link to a career page of Keyrock."
+  },
+  "recommendation": "REWORK"
+}
+```

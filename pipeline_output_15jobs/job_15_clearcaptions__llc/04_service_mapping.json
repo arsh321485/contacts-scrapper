@@ -1,0 +1,60 @@
+```json
+{
+  "Cybersecurity Consulting & Strategy": {
+    "relevance": "General cybersecurity consulting and strategic planning to ensure robust security measures are in place.",
+    "requirements_addressed": [
+      "Develop and implement cybersecurity strategies",
+      "Align security posture with business objectives"
+    ],
+    "engagement_type": "Consulting"
+  },
+  "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)": {
+    "relevance": "Ensuring compliance with industry standards and regulations to protect sensitive information.",
+    "requirements_addressed": [
+      "Ensure compliance with relevant cybersecurity regulations",
+      "Implement and manage audits for compliance assessments"
+    ],
+    "engagement_type": "Consulting and Audit"
+  },
+  "Proactive Security Assurance": {
+    "relevance": "Proactively identify vulnerabilities and threats to strengthen the organization's security.",
+    "requirements_addressed": [
+      "Conduct regular security assessments",
+      "Implement measures for ongoing threat detection"
+    ],
+    "engagement_type": "Consulting and Assessment"
+  },
+  "Risk Assessment & GRC": {
+    "relevance": "Assess and manage risks to protect organizational assets and ensure governance, risk, and compliance.",
+    "requirements_addressed": [
+      "Perform risk assessments and develop mitigation strategies",
+      "Implement governance frameworks"
+    ],
+    "engagement_type": "Consulting and Assessment"
+  },
+  "Security Training & Awareness": {
+    "relevance": "Educate staff on cybersecurity best practices to prevent breaches and improve security culture.",
+    "requirements_addressed": [
+      "Develop and deliver cybersecurity training programs",
+      "Enhance staff awareness on security protocols"
+    ],
+    "engagement_type": "Training"
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "relevance": "Provide skilled cybersecurity professionals to augment existing teams and address skill gaps.",
+    "requirements_addressed": [
+      "Augment staff with cybersecurity expertise",
+      "Provide vCISO or specialized security roles"
+    ],
+    "engagement_type": "Staff Augmentation"
+  },
+  "Incident Response & Forensics": {
+    "relevance": "Prepare for and respond to security incidents to minimize impact and recover quickly.",
+    "requirements_addressed": [
+      "Develop and implement incident response plans",
+      "Conduct forensic investigations post-incident"
+    ],
+    "engagement_type": "Consulting and Response"
+  }
+}
+```

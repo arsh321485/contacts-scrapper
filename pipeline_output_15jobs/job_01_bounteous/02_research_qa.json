@@ -1,0 +1,24 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": false
+  },
+  "issues": [
+    {
+      "item": "Job Description",
+      "issue": "The job description provided does not clearly relate to the specific role of 'Information Security Operations Engineer'. It seems to be a generic description of the company's services and methodology rather than job-specific duties or responsibilities."
+    },
+    {
+      "item": "No hallucinations",
+      "issue": "The job description ends abruptly with 'over.', indicating incomplete information. Additionally, the URL provided does not directly link to Bounteous's website, but to a job listing on a third-party site (RemoteOK), which might not be the primary source of truth."
+    }
+  ],
+  "recommendation": "REWORK"
+}
+```

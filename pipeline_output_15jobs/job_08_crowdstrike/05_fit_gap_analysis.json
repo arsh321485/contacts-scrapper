@@ -1,0 +1,81 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Classification": "STRONG FIT",
+    "Justification": "The service aligns well with the need for advanced threat detection and response, as well as integrating threat intelligence and hunting capabilities. It directly supports the strategic aspect of the job role by enhancing these cybersecurity capabilities.",
+    "Proof Points": [
+      "Alignment with advanced threat detection and response",
+      "Integration of threat intelligence"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Classification": "STRONG FIT",
+    "Justification": "Operating in a highly regulated environment, the company needs to ensure compliance with standards such as GDPR. This service is essential for maintaining compliance and avoiding legal penalties.",
+    "Proof Points": [
+      "Necessity for GDPR compliance",
+      "Adherence to industry standards"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Classification": "STRONG FIT",
+    "Justification": "The service's focus on proactive threat identification and mitigation aligns with the job's requirement for ongoing security assurance, making it a strong fit for the role.",
+    "Proof Points": [
+      "Proactive threat identification",
+      "Continuous security posture improvement"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Classification": "STRONG FIT",
+    "Justification": "Risk assessment is crucial for managing cybersecurity risks effectively, aligning with the job's focus on threat detection and response, as well as governance practices.",
+    "Proof Points": [
+      "Focus on risk assessment",
+      "Governance, risk management, and compliance"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While not directly related to the job role, training enhances security maturity and helps prepare employees to handle threats. It's beneficial but not critical to the role's core responsibilities.",
+    "Proof Points": [
+      "Enhances employee readiness",
+      "Improves threat detection training"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 6
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "Staff augmentation provides access to specialized skills such as threat hunting, offering flexibility in scaling operations. However, it might not be a core necessity if existing staff meets the required skill set.",
+    "Proof Points": [
+      "Access to specialized skills",
+      "Scalability of operations"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Classification": "STRONG FIT",
+    "Justification": "This service is crucial for rapid response to threats and incidents, tying into threat hunting by preventing threats from escalating into full-blown incidents.",
+    "Proof Points": [
+      "Rapid threat response",
+      "Forensic analysis capabilities"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  }
+]
+```

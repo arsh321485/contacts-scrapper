@@ -1,0 +1,12 @@
+```json
+{
+  "variant_a": {
+    "subject": "Enhance Your Team's Cybersecurity Strategy with SecureITLab",
+    "body": "Hi [Hiring Manager's Name],\n\nI hope this message finds you well. I’m reaching out to introduce SecureITLab and how we can be the perfect partner to bolster your cybersecurity initiatives. As a proactive, lean team of senior consultants, we specialize in providing strategic cybersecurity consulting and staff augmentation, including vCISO, SOC, and pen testers, to bridge any immediate skill gaps you may have.\n\nOur services ensure alignment with your business objectives, while our comprehensive compliance audits (ISO 27001, SOC 2, GDPR, HIPAA) enhance your organizational credibility. By partnering with us, you’ll benefit from reduced human error through targeted training and a robust incident response strategy that minimizes impact.\n\nCould we schedule a 15-minute call to explore how we can support your team’s immediate and strategic needs? Let me know your availability, and I’ll do my best to accommodate.\n\nLooking forward to the opportunity to collaborate.\n\nBest Regards,\n\n[Your Name]\n[Your Position]\nSecureITLab"
+  },
+  "variant_b": {
+    "subject": "Strategic Cybersecurity Solutions to Drive Business Success",
+    "body": "Hi [CISO/VP's Name],\n\nNavigating today’s dynamic threat landscape requires a cybersecurity strategy that not only protects but also propels your business forward. At SecureITLab, we offer an integrated suite of cybersecurity services that enhance your security posture and ensure compliance with critical regulatory frameworks like ISO 27001 and HIPAA.\n\nOur strategic consulting aligns with your business objectives, delivering measurable results such as a reduction in security incidents and improved compliance audit outcomes. With defined SLAs, our proactive security measures and risk management strategies minimize potential operational impacts, ensuring your organization remains resilient and adaptable.\n\nLet's discuss how our expertise can drive your cybersecurity objectives and support your overarching business goals. Please let me know a convenient time for a brief call.\n\nWarm Regards,\n\n[Your Name]\n[Your Position]\nSecureITLab"
+  }
+}
+```

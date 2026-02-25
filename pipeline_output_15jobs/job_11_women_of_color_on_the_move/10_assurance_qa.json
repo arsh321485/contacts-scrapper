@@ -1,0 +1,34 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Cybersecurity Consulting & Strategy",
+    "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Risk Assessment & GRC",
+    "Proactive Security Assurance",
+    "Security Training & Awareness",
+    "Staff Augmentation (vCISO, SOC, pen testers)"
+  ],
+  "issues": [
+    {
+      "section": "ProofPoints",
+      "item": "Cybersecurity Consulting & Strategy",
+      "issue": "Vague claim 'Supports strategic leadership in cybersecurity.'",
+      "replacement": "Provides expert guidance for developing and implementing cybersecurity strategies that align with organizational goals."
+    },
+    {
+      "section": "ProofPoints",
+      "item": "Compliance & Audit",
+      "issue": "Vague claim 'Addresses regulatory compliance needs.'",
+      "replacement": "Ensures comprehensive compliance through tailored audit processes and continuous monitoring aligned with ISO 27001, SOC 2, GDPR, and HIPAA standards."
+    },
+    {
+      "section": "ProofPoints",
+      "item": "Staff Augmentation",
+      "issue": "Vague claim 'Provides strategic leadership support.'",
+      "replacement": "Delivers on-demand vCISO and cybersecurity specialists to enhance leadership and operational capacity in security projects."
+    }
+  ],
+  "recommendation": "The Deal Assurance Pack effectively covers essential cybersecurity services but requires improvement in the specificity of proof points. Enhance the clarity of claims to better demonstrate expertise and service effectiveness. Ensure all proof points clearly illustrate the value delivered through measurable outcomes and specific benefits to clients."
+}
+```

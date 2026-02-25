@@ -1,0 +1,18 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": true,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": false
+  },
+  "issues": {
+    "Organization URL": "The URL provided does not lead directly to the Sev1Tech website or a well-known job posting platform. It redirects to 'himalayas.app', which may not be the primary or official site for Sev1Tech job listings. This raises concerns about the authenticity and accuracy of the job posting.",
+    "No hallucinations": "The job description mentions supporting the United States Navy, which should be verified through a reliable source to ensure it is a genuine requirement of the position. The URL provided does not adequately support this information."
+  },
+  "recommendation": "REWORK"
+}
+```

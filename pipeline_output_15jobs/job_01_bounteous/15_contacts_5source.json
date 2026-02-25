@@ -1,0 +1,273 @@
+{
+  "status": "success",
+  "company": "Bounteous",
+  "domain": "bounteous.com",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io",
+    "People Data Labs"
+  ],
+  "total_found": 21,
+  "contacts": [
+    {
+      "name": "Vignesh Paramasivam",
+      "title": "Associate Director",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/vignesh-paramasivam-389a7453",
+      "email": "vignesh.paramasivam@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Neelesh Aggarwal",
+      "title": "Technical Director",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/neelesh-aggarwal-91898022",
+      "email": "neelesh.aggarwal@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Chris Sands",
+      "title": "Associate Director, Team Enablement",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/chris-sands-2443576",
+      "email": "chris.sands@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Varun Chopra",
+      "title": "Associate Director",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/varun-chopra-73549311",
+      "email": "varun.chopra@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Sara Steinbock",
+      "title": "Social Media Director",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/sara-steinbock-a59bab76",
+      "email": "sara.steinbock@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Mitrajit Pani",
+      "title": "Associate Director",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/mitrajit-pani-ab8b326a",
+      "email": "mitrajit.pani@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Varun Sharma",
+      "title": "Associate Director",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/varun-kumar-sharma-59038138",
+      "email": "varun.sharma@bounteous.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "kristy laplante-jodoin",
+      "title": "director, marketing technology",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/kristylaplante",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "kristy.laplante-jodoin@bounteous.com",
+        "kristy@bounteous.com",
+        "klaplante-jodoin@bounteous.com",
+        "kristylaplante-jodoin@bounteous.com",
+        "laplante-jodoin@bounteous.com"
+      ]
+    },
+    {
+      "name": "ericka o'connor",
+      "title": "associate director, design",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/erickasoconnor",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "ericka.o'connor@bounteous.com",
+        "ericka@bounteous.com",
+        "eo'connor@bounteous.com",
+        "erickao'connor@bounteous.com",
+        "o'connor@bounteous.com"
+      ]
+    },
+    {
+      "name": "sara hanrahan",
+      "title": "director, martech solutions",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/saramhanrahan",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "sara.hanrahan@bounteous.com",
+        "sara@bounteous.com",
+        "shanrahan@bounteous.com",
+        "sarahanrahan@bounteous.com",
+        "hanrahan@bounteous.com"
+      ]
+    },
+    {
+      "name": "john telford",
+      "title": "executive vice president, managing director",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/johntelford",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "john.telford@bounteous.com",
+        "john@bounteous.com",
+        "jtelford@bounteous.com",
+        "johntelford@bounteous.com",
+        "telford@bounteous.com"
+      ]
+    },
+    {
+      "name": "holly notko",
+      "title": "senior director, client services / client partner",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/hollylhenry",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "holly.notko@bounteous.com",
+        "holly@bounteous.com",
+        "hnotko@bounteous.com",
+        "hollynotko@bounteous.com",
+        "notko@bounteous.com"
+      ]
+    },
+    {
+      "name": "angela marsh",
+      "title": "director of integrated media activation",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/angela-marsh-91b40825",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "angela.marsh@bounteous.com",
+        "angela@bounteous.com",
+        "amarsh@bounteous.com",
+        "angelamarsh@bounteous.com",
+        "marsh@bounteous.com"
+      ]
+    },
+    {
+      "name": "brenna dyer",
+      "title": "senior director, product management",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/brennakdyer",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "brenna.dyer@bounteous.com",
+        "brenna@bounteous.com",
+        "bdyer@bounteous.com",
+        "brennadyer@bounteous.com",
+        "dyer@bounteous.com"
+      ]
+    },
+    {
+      "name": "corey schmidt",
+      "title": "program director | health",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/corey-schmidt-a1394229",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "corey.schmidt@bounteous.com",
+        "corey@bounteous.com",
+        "cschmidt@bounteous.com",
+        "coreyschmidt@bounteous.com",
+        "schmidt@bounteous.com"
+      ]
+    },
+    {
+      "name": "ashley delaurier",
+      "title": "senior account director",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/ashleydelaurier",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "ashley.delaurier@bounteous.com",
+        "ashley@bounteous.com",
+        "adelaurier@bounteous.com",
+        "ashleydelaurier@bounteous.com",
+        "delaurier@bounteous.com"
+      ]
+    },
+    {
+      "name": "Jessica Brislen",
+      "title": "Chief Revenue Officer",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/jessicabrislen",
+      "email": "jessica.brislen@bounteous.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Jess Mcwilliamsbrandt",
+      "title": "Vice President of User Experience",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/jessicamcwilliamsbrandt",
+      "email": "jess.mcwilliamsbrandt@bounteous.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "dave mankowski",
+      "title": "chief growth officer",
+      "company": "Bounteous",
+      "linkedin_url": "linkedin.com/in/davemankowski",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "dave.mankowski@bounteous.com",
+        "dave@bounteous.com",
+        "dmankowski@bounteous.com",
+        "davemankowski@bounteous.com",
+        "mankowski@bounteous.com"
+      ]
+    },
+    {
+      "name": "Amaro Filho",
+      "title": "Senior Product Owner",
+      "company": "Bounteous",
+      "linkedin_url": "https://www.linkedin.com/in/amaro-filho-powner",
+      "email": "amaro.filho@bounteous.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:99%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "Bounteous",
+      "linkedin_url": "",
+      "email": "ankit.shah@bounteous.com",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

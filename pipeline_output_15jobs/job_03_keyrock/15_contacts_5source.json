@@ -1,0 +1,192 @@
+{
+  "status": "success",
+  "company": "Keyrock",
+  "domain": "keyrock.eu",
+  "sources_tried": [
+    "Minelead.io",
+    "People Data Labs",
+    "theorg.com"
+  ],
+  "total_found": 12,
+  "contacts": [
+    {
+      "name": "david cass",
+      "title": "chief information security officer",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/dcass001",
+      "email": "david@keyrock.eu",
+      "priority": "Primary",
+      "source": "People Data Labs"
+    },
+    {
+      "name": "marlon vom bruch",
+      "title": "associate director - corporate sales",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/marlonvb",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "marlon.bruch@keyrock.eu",
+        "marlon@keyrock.eu",
+        "mbruch@keyrock.eu",
+        "marlonbruch@keyrock.eu",
+        "bruch@keyrock.eu"
+      ]
+    },
+    {
+      "name": "stef wynendaele",
+      "title": "managing director, global head of corporate sales",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/stefwynendaele",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "stef.wynendaele@keyrock.eu",
+        "stef@keyrock.eu",
+        "swynendaele@keyrock.eu",
+        "stefwynendaele@keyrock.eu",
+        "wynendaele@keyrock.eu"
+      ]
+    },
+    {
+      "name": "Jeremy De Groodt Co",
+      "title": "Founder & CTO",
+      "company": "Keyrock",
+      "linkedin_url": "",
+      "email": "",
+      "priority": "Secondary",
+      "source": "theorg.com text",
+      "email_patterns": [
+        "jeremy.co@keyrock.eu",
+        "jeremy@keyrock.eu",
+        "jco@keyrock.eu",
+        "jeremyco@keyrock.eu",
+        "co@keyrock.eu"
+      ]
+    },
+    {
+      "name": "n\u00faria franco",
+      "title": "executive assistant to chief commercial officer",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/nuriafranco86",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "n\u00faria.franco@keyrock.eu",
+        "n\u00faria@keyrock.eu",
+        "nfranco@keyrock.eu",
+        "n\u00fariafranco@keyrock.eu",
+        "franco@keyrock.eu"
+      ]
+    },
+    {
+      "name": "linda hodges",
+      "title": "chief executive officer & owner",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/linda-hodges-14a13b8",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "linda.hodges@keyrock.eu",
+        "linda@keyrock.eu",
+        "lhodges@keyrock.eu",
+        "lindahodges@keyrock.eu",
+        "hodges@keyrock.eu"
+      ]
+    },
+    {
+      "name": "robert valdes-rodriguez",
+      "title": "chief commercial officer (cco)",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/robert-valdes-rodriguez-05b9781a",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "robert.valdes-rodriguez@keyrock.eu",
+        "robert@keyrock.eu",
+        "rvaldes-rodriguez@keyrock.eu",
+        "robertvaldes-rodriguez@keyrock.eu",
+        "valdes-rodriguez@keyrock.eu"
+      ]
+    },
+    {
+      "name": "joe armstrong",
+      "title": "fractional chief financial officer / real estate & board advisor",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/joe-armstrong43",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "joe.armstrong@keyrock.eu",
+        "joe@keyrock.eu",
+        "jarmstrong@keyrock.eu",
+        "joearmstrong@keyrock.eu",
+        "armstrong@keyrock.eu"
+      ]
+    },
+    {
+      "name": "kevin de patoul",
+      "title": "chief executive officer & co-founder",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/kevin-de-patoul",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "kevin.patoul@keyrock.eu",
+        "kevin@keyrock.eu",
+        "kpatoul@keyrock.eu",
+        "kevinpatoul@keyrock.eu",
+        "patoul@keyrock.eu"
+      ]
+    },
+    {
+      "name": "francesco adiliberti",
+      "title": "chief operating officer",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/francesco-adiliberti",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "francesco.adiliberti@keyrock.eu",
+        "francesco@keyrock.eu",
+        "fadiliberti@keyrock.eu",
+        "francescoadiliberti@keyrock.eu",
+        "adiliberti@keyrock.eu"
+      ]
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "Keyrock",
+      "linkedin_url": "",
+      "email": "jeremy@keyrock.eu",
+      "priority": "General",
+      "source": "Minelead.io"
+    },
+    {
+      "name": "laura chaput",
+      "title": "head regulatory compliance at keyrock - changing the course of finance",
+      "company": "Keyrock",
+      "linkedin_url": "linkedin.com/in/laura-chaput-96927055",
+      "email": "",
+      "priority": "General",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "laura.chaput@keyrock.eu",
+        "laura@keyrock.eu",
+        "lchaput@keyrock.eu",
+        "laurachaput@keyrock.eu",
+        "chaput@keyrock.eu"
+      ]
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

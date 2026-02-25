@@ -1,0 +1,15 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Services are clearly tied to job requirements.",
+    "Proof points are present for each service.",
+    "Opportunity scores are provided for all services.",
+    "At least two service lines are mapped.",
+    "Services have been classified as STRONG FIT or PARTIAL FIT appropriately.",
+    "Delivery risk assessments are included."
+  ],
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis have been validated successfully. All required elements are present, including clear alignment of services with job requirements, adequate proof points, opportunity scores, and delivery risk assessments. No issues were identified, and the documentation meets all criteria for a thorough analysis."
+}
+```

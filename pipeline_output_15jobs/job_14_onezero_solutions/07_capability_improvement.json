@@ -1,0 +1,74 @@
+```json
+{
+  "CapabilityImprovementRecommendations": [
+    {
+      "Service": "Proactive Security Assurance",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Type": "Training",
+          "Description": "Develop training programs focusing on integrating proactive security measures with compliance frameworks like RMF."
+        },
+        {
+          "Type": "Partnerships",
+          "Description": "Establish partnerships with compliance-focused consultancies to enhance the strategic and compliance aspects."
+        },
+        {
+          "Type": "Tooling",
+          "Description": "Invest in tools that offer both proactive security capabilities and compliance management."
+        }
+      ],
+      "Priority": "High - Enhancing compliance integration is crucial."
+    },
+    {
+      "Service": "Security Training & Awareness",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Type": "Training",
+          "Description": "Enhance training offerings to include modules on RMF execution and strategic compliance."
+        },
+        {
+          "Type": "Certifications",
+          "Description": "Encourage trainers to obtain certifications like CISSP or CISM to align better with strategic needs."
+        },
+        {
+          "Type": "Tooling",
+          "Description": "Implement Learning Management Systems (LMS) to track and improve training quality and outcomes."
+        }
+      ],
+      "Priority": "Medium - Important to support overall compliance through education."
+    },
+    {
+      "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Type": "Hiring",
+          "Description": "Hire staff with dual expertise in strategic planning and compliance to bridge the gap."
+        },
+        {
+          "Type": "Partnerships",
+          "Description": "Partner with firms specializing in strategic and compliance roles to augment offerings."
+        }
+      ],
+      "Priority": "Low - More indirect support for compliance and strategic functions."
+    },
+    {
+      "Service": "Incident Response & Forensics",
+      "Classification": "PARTIAL FIT",
+      "Recommendations": [
+        {
+          "Type": "Training",
+          "Description": "Provide training on aligning incident response with RMF and broader compliance strategies."
+        },
+        {
+          "Type": "Tooling",
+          "Description": "Adopt integrated incident management platforms that support strategic compliance alignment."
+        }
+      ],
+      "Priority": "Medium - Coordination with broader strategy is necessary."
+    }
+  ]
+}
+```

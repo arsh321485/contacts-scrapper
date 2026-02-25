@@ -1,0 +1,24 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": true,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": false
+  },
+  "issues": [
+    {
+      "item": "Organization URL",
+      "issue": "The provided URL is not the official company website but rather a job listing on a third-party job platform (arbeitnow.com)."
+    },
+    {
+      "item": "No hallucinations",
+      "issue": "The URL provided does not directly lead to evidence confirming the job details. It is important to verify that the job listing is legitimate and cross-check with the company's official career page."
+    }
+  ],
+  "recommendation": "REWORK"
+}
+```

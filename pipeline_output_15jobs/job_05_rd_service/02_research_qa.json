@@ -1,0 +1,18 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": true,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": false
+  },
+  "issues": [
+    "The Organization URL provided does not directly link to the official company website of RD Service. Instead, it appears to be a URL from a job listing site (arbeitnow.com), which may not accurately represent the official source of the company.",
+    "The job description seems incomplete as it ends abruptly and lacks full details of the responsibilities and requirements for the role."
+  ],
+  "recommendation": "REWORK"
+}
+```

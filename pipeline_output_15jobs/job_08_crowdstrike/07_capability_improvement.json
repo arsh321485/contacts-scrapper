@@ -1,0 +1,64 @@
+```json
+[
+  {
+    "Service": "Security Training & Awareness",
+    "Classification": "PARTIAL FIT",
+    "Recommendations": [
+      {
+        "Action": "Training",
+        "Details": {
+          "Description": "Develop a comprehensive security awareness training program tailored to enhance cybersecurity skills and threat detection capabilities among employees.",
+          "Priority": "High",
+          "Effort": "Medium"
+        }
+      },
+      {
+        "Action": "Certifications",
+        "Details": {
+          "Description": "Encourage employees to obtain certifications such as Certified Information Systems Security Professional (CISSP) or Certified Information Security Manager (CISM) to improve security maturity.",
+          "Priority": "Medium",
+          "Effort": "Medium"
+        }
+      },
+      {
+        "Action": "Tooling",
+        "Details": {
+          "Description": "Implement a learning management system (LMS) to deliver and track security training and awareness programs.",
+          "Priority": "Low",
+          "Effort": "Low"
+        }
+      }
+    ]
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "PARTIAL FIT",
+    "Recommendations": [
+      {
+        "Action": "Hiring",
+        "Details": {
+          "Description": "Recruit additional cybersecurity professionals to fill gaps in specialized skills such as threat hunting and penetration testing.",
+          "Priority": "High",
+          "Effort": "High"
+        }
+      },
+      {
+        "Action": "Partnerships",
+        "Details": {
+          "Description": "Establish partnerships with cybersecurity firms to provide flexible access to specialized skills on-demand.",
+          "Priority": "Medium",
+          "Effort": "Medium"
+        }
+      },
+      {
+        "Action": "Tooling",
+        "Details": {
+          "Description": "Use staffing platforms to streamline the process of finding and hiring specialized cybersecurity talent.",
+          "Priority": "Low",
+          "Effort": "Low"
+        }
+      }
+    ]
+  }
+]
+```

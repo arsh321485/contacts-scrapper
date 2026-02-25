@@ -1,0 +1,62 @@
+```json
+{
+  "Security Training & Awareness": {
+    "classification": "PARTIAL FIT",
+    "recommendations": [
+      {
+        "action": "Training",
+        "description": "Develop and implement a comprehensive security awareness training program tailored to different job roles within the organization.",
+        "priority": "High",
+        "effort": "Medium"
+      },
+      {
+        "action": "Certifications",
+        "description": "Encourage employees to obtain relevant certifications such as Certified Information Systems Security Professional (CISSP) or Certified Information Security Manager (CISM) to enhance security knowledge.",
+        "priority": "Medium",
+        "effort": "Low"
+      },
+      {
+        "action": "Partnerships",
+        "description": "Partner with specialized security training providers to deliver ongoing workshops and seminars.",
+        "priority": "High",
+        "effort": "Low"
+      },
+      {
+        "action": "Tooling",
+        "description": "Implement security awareness platforms such as KnowBe4 or Wombat Security to automate and enhance training delivery.",
+        "priority": "Medium",
+        "effort": "Medium"
+      }
+    ]
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "classification": "PARTIAL FIT",
+    "recommendations": [
+      {
+        "action": "Hiring",
+        "description": "Recruit temporary or contract security experts to fill immediate gaps, such as virtual Chief Information Security Officers (vCISO), Security Operation Center (SOC) analysts, and penetration testers.",
+        "priority": "High",
+        "effort": "High"
+      },
+      {
+        "action": "Partnerships",
+        "description": "Establish partnerships with staffing agencies and cybersecurity consultancies to quickly source qualified personnel.",
+        "priority": "High",
+        "effort": "Low"
+      },
+      {
+        "action": "Training",
+        "description": "Create a mentorship program where temporary staff can transfer knowledge to permanent staff, enhancing internal capabilities.",
+        "priority": "Medium",
+        "effort": "Medium"
+      },
+      {
+        "action": "Tooling",
+        "description": "Invest in collaboration and remote work tools such as Slack or Microsoft Teams to improve integration and productivity of augmented staff.",
+        "priority": "Medium",
+        "effort": "Low"
+      }
+    ]
+  }
+}
+```

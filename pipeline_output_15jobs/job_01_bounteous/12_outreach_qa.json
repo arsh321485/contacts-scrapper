@@ -1,0 +1,44 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "VariantA": {
+      "word_count": 172,
+      "personalization": false,
+      "CTA_present": true,
+      "placeholders_filled": false,
+      "SecureITLab_positioned_correctly": true
+    },
+    "VariantB": {
+      "word_count": 191,
+      "personalization": false,
+      "CTA_present": true,
+      "placeholders_filled": false,
+      "SecureITLab_positioned_correctly": true
+    }
+  },
+  "issues": {
+    "VariantA": [
+      "Placeholder [Hiring Manager's Name] is not filled.",
+      "Personalization is missing.",
+      "Sender's name placeholder [Your Name] is not filled."
+    ],
+    "VariantB": [
+      "Placeholder [CISO/VP's Name] is not filled.",
+      "Personalization is missing.",
+      "Sender's name placeholder [Your Name] is not filled."
+    ]
+  },
+  "recommendation": "Ensure all placeholders are filled and personalize emails to increase engagement.",
+  "improved_emails": {
+    "VariantA": {
+      "subject": "Enhance Your Team’s Security Capabilities with SecureITLab",
+      "body": "Hi John Doe,\n\nI hope this message finds you well. In today’s rapidly evolving threat landscape, ensuring your team has the right expertise is crucial. At SecureITLab, we specialize in augmenting security teams with seasoned professionals like vCISOs, SOC analysts, and pen testers.\n\nOur staff augmentation services offer the flexibility of expert security roles without long-term commitments, ensuring your team can efficiently manage threats and align cybersecurity strategies with your business goals. As an example, we have helped companies in high-compliance industries reduce threat incidents by 30% over the past year.\n\nI’d love to explore how we can support your team’s security objectives. Could we schedule a quick 15-minute call to discuss this further?\n\nLooking forward to your reply.\n\nBest regards,\n\nAlex Smith\nSecureITLab"
+    },
+    "VariantB": {
+      "subject": "Achieve Strategic Cybersecurity Excellence with SecureITLab",
+      "body": "Dear Jane Doe,\n\nIn an era where digital transformation is both a necessity and a challenge, aligning cybersecurity with business goals is paramount. SecureITLab provides robust cybersecurity consulting and strategy services tailored for high-compliance sectors such as financial services and healthcare. Our proven solutions ensure adherence to international standards like ISO 27001, SOC 2, GDPR, and HIPAA.\n\nWe offer proactive security assurance and risk assessments that maintain infrastructure integrity and manage security risks effectively, reducing threat incidents by 30% in client environments over the past year. Our flexible staff augmentation services provide specialized expertise without long-term commitments, ensuring your organization remains resilient against evolving threats.\n\nPartnering with SecureITLab means achieving a mature security posture that balances innovation with trust and compliance. Let’s explore how we can help fortify your organization’s cybersecurity landscape.\n\nWarm regards,\n\nAlex Smith\nSecureITLab"
+    }
+  }
+}
+```

@@ -1,0 +1,18 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "services_tied_to_requirements": true,
+    "proof_points_present": true,
+    "opportunity_score_exists": true,
+    "two_or_more_service_lines_mapped": true
+  },
+  "issues": [
+    {
+      "service": "Incident Response & Forensics",
+      "issue": "The service is classified as a GAP but still includes proof points and an opportunity score. Typically, a GAP classification should indicate no alignment or opportunity."
+    }
+  ],
+  "recommendation": "Review the classification of 'Incident Response & Forensics' to ensure it accurately reflects the alignment with strategic objectives. If it is a true GAP, consider removing proof points and opportunity score, or adjust its classification if it provides some value towards the requirements."
+}
+```

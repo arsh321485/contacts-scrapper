@@ -1,0 +1,112 @@
+{
+  "status": "success",
+  "company": "Southern New Hampshire University",
+  "domain": "snhu.edu",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io"
+  ],
+  "total_found": 11,
+  "contacts": [
+    {
+      "name": "Ela \u00c7etino\u011flu",
+      "title": "Assistant Director of Accreditation and Assessment",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/ela-nisan-\u00e7etino\u011flu-a6aa5728b",
+      "email": "g.elliott@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Amy Ames",
+      "title": "Director of Career Services",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/amyameslpc",
+      "email": "a.ames@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Deana Gilkinson",
+      "title": "Assistant Director of Events",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/deana-gilkinson-b38b9aa",
+      "email": "d.gilkinson@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Darrin Heald",
+      "title": "Director of Partnerships",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/darrinheald",
+      "email": "d.heald@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Rodney Pennamon",
+      "title": "Director of Counseling Programs",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/rodneypennamon",
+      "email": "r.pennamon@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Micheline Goodno",
+      "title": "Director",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/micheline-goodno-27b010180",
+      "email": "m.goodno@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Robin Kirschner",
+      "title": "Nursing Program Director",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/robin-kirschner-edd-dnp-rn-cne-nea-bc-cnl-b1058654",
+      "email": "r.kirschner@snhu.edu",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Stacey Rosenberg",
+      "title": "Associate Chief Nursing Officer",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/stacey-rosenberg-dnp-rn-acns-bc-cne-70237787",
+      "email": "s.rosenberg@snhu.edu",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Jennifer Batchelor",
+      "title": "Executive Vice President",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/jbatchelor",
+      "email": "j.batchelor@snhu.edu",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Sean Walsh",
+      "title": "Head Coach",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "https://www.linkedin.com/in/sean-walsh-a015406a",
+      "email": "s.walsh@snhu.edu",
+      "priority": "General",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "Southern New Hampshire University",
+      "linkedin_url": "",
+      "email": "gradadmission@snhu.edu",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

@@ -1,0 +1,24 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": true,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": false
+  },
+  "issues": [
+    {
+      "item": "Organization URL",
+      "description": "The provided URL (https://remoteOK.com/remote-jobs/remote-security-engineer-permitflow-1130241) is a job listing link, not a direct URL to the company's official website. This can be misleading when identifying the official company page."
+    },
+    {
+      "item": "No hallucinations",
+      "description": "The job description appears to be consistent with a position at PermitFlow, but the URL provided does not directly confirm the company’s website or more detailed official job posting information, which may lead to potential hallucinations about the context and authenticity."
+    }
+  ],
+  "recommendation": "REWORK"
+}
+```

@@ -1,0 +1,74 @@
+```json
+{
+  "Cybersecurity Consulting & Strategy": {
+    "classification": "STRONG FIT",
+    "justification": "The service aligns directly with the ISSO's role of developing and implementing cybersecurity strategies and advising on security measures.",
+    "proof_points": [
+      "High-level security strategy planning",
+      "Information protection implementation"
+    ],
+    "delivery_risk": "Low",
+    "opportunity_score": 9
+  },
+  "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)": {
+    "classification": "STRONG FIT",
+    "justification": "Ensuring compliance and preparing for audits are essential parts of an ISSO's responsibilities, making this service a strong match.",
+    "proof_points": [
+      "Regulatory and industry standard adherence",
+      "Audit preparation and execution"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 8
+  },
+  "Proactive Security Assurance": {
+    "classification": "STRONG FIT",
+    "justification": "Proactive security measures and regular assessments are crucial for an ISSO in maintaining secure systems, aligning well with this service.",
+    "proof_points": [
+      "Regular security assessments",
+      "Proactive security implementation"
+    ],
+    "delivery_risk": "Low",
+    "opportunity_score": 9
+  },
+  "Risk Assessment & GRC": {
+    "classification": "STRONG FIT",
+    "justification": "Continuous risk assessment and governance are core to the ISSO role, perfectly aligning with this service offering.",
+    "proof_points": [
+      "Continuous risk management",
+      "GRC framework development"
+    ],
+    "delivery_risk": "Low",
+    "opportunity_score": 9
+  },
+  "Security Training & Awareness": {
+    "classification": "PARTIAL FIT",
+    "justification": "While important, security training is not a primary focus for an ISSO, making it a partial fit in terms of direct responsibilities.",
+    "proof_points": [
+      "Developing security awareness training",
+      "Promoting security culture"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 6
+  },
+  "Staff Augmentation (vCISO, SOC, pen testers)": {
+    "classification": "STRONG FIT",
+    "justification": "Given the organization's small size, augmenting the security team with additional expertise is highly relevant.",
+    "proof_points": [
+      "Additional security expertise",
+      "Support for existing staff"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 8
+  },
+  "Incident Response & Forensics": {
+    "classification": "STRONG FIT",
+    "justification": "Prompt incident response and forensic capabilities are critical for an ISSO, aligning perfectly with this service.",
+    "proof_points": [
+      "Incident response planning",
+      "Forensic investigation capabilities"
+    ],
+    "delivery_risk": "Medium",
+    "opportunity_score": 8
+  }
+}
+```

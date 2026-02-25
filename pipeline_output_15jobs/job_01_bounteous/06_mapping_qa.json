@@ -1,0 +1,15 @@
+```json
+{
+  "passed": true,
+  "checklist": [
+    "Services are tied to requirements.",
+    "Proof points are present for each service.",
+    "Opportunity score exists for each service.",
+    "At least two service lines are mapped.",
+    "Classification and justification are provided for each service.",
+    "Delivery risk is assessed for each service."
+  ],
+  "issues": [],
+  "recommendation": "The service mapping and fit/gap analysis are well-aligned with Bounteous's needs across high-compliance industries. All services are clearly mapped to specific requirements, complete with justifications and proof points. Opportunity scores and delivery risks are appropriately evaluated, ensuring comprehensive coverage and strategic alignment. Maintain the current mapping as it effectively supports Bounteous's operational and strategic objectives."
+}
+```

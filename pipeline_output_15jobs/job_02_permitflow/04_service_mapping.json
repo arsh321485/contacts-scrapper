@@ -1,0 +1,67 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Relevance": "PermitFlow is a mid-size company in the construction technology sector, utilizing AI-driven platforms which require a robust cybersecurity strategy to protect sensitive data.",
+    "Job Requirements Addressed": [
+      "Developing security strategies for AI-driven platforms",
+      "Ensuring alignment with enterprise-level security standards"
+    ],
+    "Engagement Type": "Consulting"
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Relevance": "PermitFlow holds SOC2 and ISO 27001 certifications, necessitating ongoing compliance management and audit readiness.",
+    "Job Requirements Addressed": [
+      "Maintaining SOC2 and ISO 27001 certifications",
+      "Preparing for audits and ensuring compliance with construction industry regulations"
+    ],
+    "Engagement Type": "Consulting and Audit"
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Relevance": "With an enterprise-level security maturity, PermitFlow needs continuous security assurance to preemptively address vulnerabilities within their AI-driven platforms.",
+    "Job Requirements Addressed": [
+      "Conducting regular security assessments",
+      "Implementing proactive measures to safeguard AI integrations"
+    ],
+    "Engagement Type": "Consulting and Continuous Monitoring"
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Relevance": "Operating in the construction technology space, PermitFlow must manage risks associated with regulatory requirements and AI platform operations.",
+    "Job Requirements Addressed": [
+      "Performing risk assessments specific to construction industry regulations",
+      "Developing governance frameworks for AI systems"
+    ],
+    "Engagement Type": "Consulting"
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Relevance": "As an AI company, PermitFlow's workforce needs to be aware of the security implications of AI technologies.",
+    "Job Requirements Addressed": [
+      "Training employees on cybersecurity best practices",
+      "Raising awareness about the security aspects of AI-driven processes"
+    ],
+    "Engagement Type": "Training"
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Relevance": "PermitFlow may require additional security expertise to support their in-house team, especially for specialized tasks like penetration testing of AI systems.",
+    "Job Requirements Addressed": [
+      "Providing vCISO services for strategic security leadership",
+      "Offering penetration testing to identify vulnerabilities in AI platforms"
+    ],
+    "Engagement Type": "Staff Augmentation"
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Relevance": "Given the enterprise-level security maturity, having a plan for incident response is critical to manage potential breaches effectively.",
+    "Job Requirements Addressed": [
+      "Developing incident response plans for AI-driven environments",
+      "Conducting forensic analysis in case of security incidents"
+    ],
+    "Engagement Type": "Consulting and On-Demand Response"
+  }
+]
+```

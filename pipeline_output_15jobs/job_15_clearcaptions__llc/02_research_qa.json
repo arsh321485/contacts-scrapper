@@ -1,0 +1,20 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": [
+    {
+      "field": "Job Description",
+      "issue": "The job description is not provided; only a placeholder text is given."
+    }
+  ],
+  "recommendation": "REWORK"
+}
+```

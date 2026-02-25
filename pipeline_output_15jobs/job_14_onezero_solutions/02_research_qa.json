@@ -1,0 +1,17 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "Job Role": true,
+    "Job Description": false,
+    "Company Name": true,
+    "Organization URL": true,
+    "Location": true,
+    "No hallucinations": true
+  },
+  "issues": {
+    "Job Description": "The job description is incomplete as it prompts to visit a URL for full details, which is not a self-contained description."
+  },
+  "recommendation": "REWORK"
+}
+```

@@ -1,0 +1,81 @@
+```json
+[
+  {
+    "Service": "Cybersecurity Consulting & Strategy",
+    "Classification": "STRONG FIT",
+    "Justification": "PermitFlow's need for a robust cybersecurity strategy aligns well with this service, especially given their use of AI-driven platforms that require tailored security strategies and alignment with enterprise-level standards.",
+    "Proof Points": [
+      "Developing security strategies for AI-driven platforms",
+      "Ensuring alignment with enterprise-level security standards"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Compliance & Audit (ISO 27001, SOC 2, GDPR, HIPAA)",
+    "Classification": "STRONG FIT",
+    "Justification": "This service directly supports PermitFlow's requirement to maintain existing certifications (SOC2, ISO 27001) and ensure audit readiness, making it highly relevant.",
+    "Proof Points": [
+      "Maintaining SOC2 and ISO 27001 certifications",
+      "Preparing for audits and ensuring compliance with construction industry regulations"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Proactive Security Assurance",
+    "Classification": "STRONG FIT",
+    "Justification": "PermitFlow's need for continuous security assurance and preemptive vulnerability management aligns perfectly with this service, given their enterprise-level security maturity.",
+    "Proof Points": [
+      "Conducting regular security assessments",
+      "Implementing proactive measures to safeguard AI integrations"
+    ],
+    "Delivery Risk": "Low",
+    "Opportunity Score": 9
+  },
+  {
+    "Service": "Risk Assessment & GRC",
+    "Classification": "STRONG FIT",
+    "Justification": "The specific focus on risk management and governance frameworks for AI systems matches PermitFlow's operational needs in the construction technology space.",
+    "Proof Points": [
+      "Performing risk assessments specific to construction industry regulations",
+      "Developing governance frameworks for AI systems"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 8
+  },
+  {
+    "Service": "Security Training & Awareness",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While security training is relevant, it might not be as critical as other services due to possible existing internal training programs or resources.",
+    "Proof Points": [
+      "Training employees on cybersecurity best practices",
+      "Raising awareness about the security aspects of AI-driven processes"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 6
+  },
+  {
+    "Service": "Staff Augmentation (vCISO, SOC, pen testers)",
+    "Classification": "PARTIAL FIT",
+    "Justification": "The need for additional security expertise is present, but it may not be a primary focus if PermitFlow already has a well-established in-house team.",
+    "Proof Points": [
+      "Providing vCISO services for strategic security leadership",
+      "Offering penetration testing to identify vulnerabilities in AI platforms"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  },
+  {
+    "Service": "Incident Response & Forensics",
+    "Classification": "PARTIAL FIT",
+    "Justification": "While essential for managing potential breaches, PermitFlow’s existing security maturity may reduce the immediate necessity for this service.",
+    "Proof Points": [
+      "Developing incident response plans for AI-driven environments",
+      "Conducting forensic analysis in case of security incidents"
+    ],
+    "Delivery Risk": "Medium",
+    "Opportunity Score": 7
+  }
+]
+```

@@ -1,0 +1,48 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "word_count": {
+      "variantA": 159,
+      "variantB": 184
+    },
+    "personalisation": {
+      "variantA": false,
+      "variantB": false
+    },
+    "CTA_present": {
+      "variantA": true,
+      "variantB": true
+    },
+    "placeholders_filled": {
+      "variantA": false,
+      "variantB": false
+    },
+    "SecureITLab_positioned_correctly": {
+      "variantA": true,
+      "variantB": true
+    }
+  },
+  "issues": {
+    "variantA": [
+      "Placeholder for [Hiring Manager's Name] not filled.",
+      "Placeholder for [Your Name] not filled."
+    ],
+    "variantB": [
+      "Placeholder for [CISO/VP's Name] not filled.",
+      "Placeholder for [Your Name] not filled."
+    ]
+  },
+  "recommendation": "Fill in all placeholders with appropriate names to ensure personalization and professionalism.",
+  "improved_emails": {
+    "variantA": {
+      "subject": "Enhance Your Security Team’s Capabilities with SecureITLab",
+      "body": "Hi John Doe,\n\nI hope this message finds you well. I’m reaching out to discuss how SecureITLab can support your team in tackling today’s complex cybersecurity landscape. We specialize in aligning our consulting services with advanced threat detection and integrating cutting-edge threat intelligence to bolster your team's capabilities.\n\nOur experience in compliance and audit ensures your systems meet critical standards like GDPR, ISO 27001, and HIPAA, safeguarding your organization from potential legal penalties. Moreover, our staff augmentation services provide access to specialized skills, enhancing your operational scalability.\n\nI’d love to explore how we can support your team’s objectives. Could we schedule a brief 15-minute call at your convenience?\n\nLooking forward to your response.\n\nBest regards,\n\nJane Smith\nSecureITLab"
+    },
+    "variantB": {
+      "subject": "Strategic Cybersecurity Solutions for Executive Leadership",
+      "body": "Dear Alex Johnson,\n\nIn today’s rapidly evolving threat landscape, SecureITLab offers a comprehensive suite of cybersecurity services that positions your organization to strategically manage risks while ensuring compliance with industry standards such as GDPR, ISO 27001, and HIPAA.\n\nOur Cybersecurity Consulting & Strategy service enables your enterprise to integrate advanced threat intelligence and enhance detection capabilities. Meanwhile, our Proactive Security Assurance ensures continuous improvement of your security posture, mitigating potential risks before they escalate into significant issues.\n\nBy leveraging our Risk Assessment & GRC services, we provide structured governance frameworks that align with your business objectives, ensuring robust risk management. Additionally, our Incident Response & Forensics guarantees rapid threat containment, minimizing potential downtime and impact.\n\nI would welcome the opportunity to discuss how our tailored solutions can drive business resilience and support your strategic goals.\n\nWarm regards,\n\nJane Smith\nSecureITLab"
+    }
+  }
+}
+```

@@ -1,0 +1,182 @@
+{
+  "status": "success",
+  "company": "RD Service",
+  "domain": "rdservice.net.br",
+  "sources_tried": [
+    "Minelead.io",
+    "People Data Labs"
+  ],
+  "total_found": 11,
+  "contacts": [
+    {
+      "name": "sophia moulton",
+      "title": "assistant director of payroll, benefits & hris",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/sophiamoulton",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "sophia.moulton@rdservice.net.br",
+        "sophia@rdservice.net.br",
+        "smoulton@rdservice.net.br",
+        "sophiamoulton@rdservice.net.br",
+        "moulton@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "debbie donastorg",
+      "title": "program director",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/debbie-donastorg-5b421b20",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "debbie.donastorg@rdservice.net.br",
+        "debbie@rdservice.net.br",
+        "ddonastorg@rdservice.net.br",
+        "debbiedonastorg@rdservice.net.br",
+        "donastorg@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "sifi denise taylor",
+      "title": "senior program director",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/denise-taylor-lcsw-sifi-5b779613",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "sifi.taylor@rdservice.net.br",
+        "sifi@rdservice.net.br",
+        "staylor@rdservice.net.br",
+        "sifitaylor@rdservice.net.br",
+        "taylor@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "chris ciasullo",
+      "title": "director of operations",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/chris-ciasullo",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "chris.ciasullo@rdservice.net.br",
+        "chris@rdservice.net.br",
+        "cciasullo@rdservice.net.br",
+        "chrisciasullo@rdservice.net.br",
+        "ciasullo@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "kelli acord",
+      "title": "chief financial officer",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/kelli-acord-03811618",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "kelli.acord@rdservice.net.br",
+        "kelli@rdservice.net.br",
+        "kacord@rdservice.net.br",
+        "kelliacord@rdservice.net.br",
+        "acord@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "eric douglas",
+      "title": "chief development officer",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/eric-douglas-b52a254",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "eric.douglas@rdservice.net.br",
+        "eric@rdservice.net.br",
+        "edouglas@rdservice.net.br",
+        "ericdouglas@rdservice.net.br",
+        "douglas@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "jeff carrick",
+      "title": "president, chief executive officer & owner of character card services, inc",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/jeff-carrick-6336a678",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "jeff.carrick@rdservice.net.br",
+        "jeff@rdservice.net.br",
+        "jcarrick@rdservice.net.br",
+        "jeffcarrick@rdservice.net.br",
+        "carrick@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "michael acord",
+      "title": "founder and chief executive officer",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/michael-dane-acord",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "michael.acord@rdservice.net.br",
+        "michael@rdservice.net.br",
+        "macord@rdservice.net.br",
+        "michaelacord@rdservice.net.br",
+        "acord@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "RD Service",
+      "linkedin_url": "",
+      "email": "duvidas.automacao@rdservice.net.br",
+      "priority": "General",
+      "source": "Minelead.io"
+    },
+    {
+      "name": "gary walker",
+      "title": "security officer",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/gary-e-walker-06225b82",
+      "email": "",
+      "priority": "General",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "gary.walker@rdservice.net.br",
+        "gary@rdservice.net.br",
+        "gwalker@rdservice.net.br",
+        "garywalker@rdservice.net.br",
+        "walker@rdservice.net.br"
+      ]
+    },
+    {
+      "name": "edward ruwe",
+      "title": "security officer",
+      "company": "RD Service",
+      "linkedin_url": "linkedin.com/in/edward-ruwe-67778914",
+      "email": "",
+      "priority": "General",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "edward.ruwe@rdservice.net.br",
+        "edward@rdservice.net.br",
+        "eruwe@rdservice.net.br",
+        "edwardruwe@rdservice.net.br",
+        "ruwe@rdservice.net.br"
+      ]
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

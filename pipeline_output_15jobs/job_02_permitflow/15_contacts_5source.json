@@ -1,0 +1,70 @@
+{
+  "status": "success",
+  "company": "PermitFlow",
+  "domain": "permitflow.com",
+  "sources_tried": [
+    "Hunter.io",
+    "People Data Labs"
+  ],
+  "total_found": 4,
+  "contacts": [
+    {
+      "name": "alex cion",
+      "title": "director, strategic initiatives",
+      "company": "PermitFlow",
+      "linkedin_url": "linkedin.com/in/alex-cion-297480196",
+      "email": "",
+      "priority": "Secondary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "alex.cion@permitflow.com",
+        "alex@permitflow.com",
+        "acion@permitflow.com",
+        "alexcion@permitflow.com",
+        "cion@permitflow.com"
+      ]
+    },
+    {
+      "name": "francis thumpasery",
+      "title": "co-founder and chief executive officer",
+      "company": "PermitFlow",
+      "linkedin_url": "linkedin.com/in/francis-thumpasery",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "francis.thumpasery@permitflow.com",
+        "francis@permitflow.com",
+        "fthumpasery@permitflow.com",
+        "francisthumpasery@permitflow.com",
+        "thumpasery@permitflow.com"
+      ]
+    },
+    {
+      "name": "raymond hu",
+      "title": "chief of staff",
+      "company": "PermitFlow",
+      "linkedin_url": "linkedin.com/in/raymond-hu-766751137",
+      "email": "",
+      "priority": "Tertiary",
+      "source": "People Data Labs",
+      "email_patterns": [
+        "raymond.hu@permitflow.com",
+        "raymond@permitflow.com",
+        "rhu@permitflow.com",
+        "raymondhu@permitflow.com",
+        "hu@permitflow.com"
+      ]
+    },
+    {
+      "name": "Samuel Lam",
+      "title": "Unknown",
+      "company": "PermitFlow",
+      "linkedin_url": "",
+      "email": "slam@permitflow.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:99%)"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

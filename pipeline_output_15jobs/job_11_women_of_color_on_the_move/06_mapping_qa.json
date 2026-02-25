@@ -1,0 +1,19 @@
+```json
+{
+  "passed": false,
+  "checklist": {
+    "services_tied_to_requirements": true,
+    "proof_points_present": true,
+    "opportunity_score_exists": true,
+    "minimum_service_lines_mapped": true
+  },
+  "issues": [
+    {
+      "service": "Incident Response & Forensics",
+      "issue": "Classification marked as 'GAP' but service is relevant for risk management and threat mitigation, which are addressed in the requirements.",
+      "recommendation": "Re-evaluate classification to ensure it aligns with the risk management requirement."
+    }
+  ],
+  "recommendation": "Review the classification for 'Incident Response & Forensics' as it might be more relevant than initially assessed. Ensure all services are evaluated correctly against the outlined requirements, particularly focusing on risk management and threat mitigation."
+}
+```

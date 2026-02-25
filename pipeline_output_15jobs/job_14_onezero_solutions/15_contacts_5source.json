@@ -1,0 +1,112 @@
+{
+  "status": "success",
+  "company": "OneZero Solutions",
+  "domain": "onezerollc.com",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io"
+  ],
+  "total_found": 11,
+  "contacts": [
+    {
+      "name": "Sean Freeman",
+      "title": "Director of Capture",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/sean-freeman-82a73713",
+      "email": "sean.freeman@onezerollc.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Sam Stark",
+      "title": "Chief Technology Officer",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/sam-stark-",
+      "email": "sam.stark@onezerollc.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:91%)"
+    },
+    {
+      "name": "Kc Sowers",
+      "title": "Social Media Director",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/kcsowers",
+      "email": "kc.sowers@onezerollc.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:84%)"
+    },
+    {
+      "name": "Wendy Snyder",
+      "title": "Director of Programs",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/wendyssnyder",
+      "email": "wendy.snyder@onezerollc.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:67%)"
+    },
+    {
+      "name": "Stephanie Thompson",
+      "title": "Director of Human Resources",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/stephanie-thompson-23725514",
+      "email": "stephanie.thompson@onezerollc.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:67%)"
+    },
+    {
+      "name": "Bob Burnett",
+      "title": "Chief Growth Officer",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/bob-burnett-6590855",
+      "email": "bob.burnett@onezerollc.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Claire Murchison",
+      "title": "Chief Administrative Officer",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/claire-murchison-85a1b566",
+      "email": "claire.murchison@onezerollc.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Al Sowers",
+      "title": "Founder",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/al-sowers-200a0a71",
+      "email": "al.sowers@onezerollc.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:83%)"
+    },
+    {
+      "name": "Tanecia Canady",
+      "title": "Senior Vice President of Finance",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/tcanady",
+      "email": "tanecia.canady@onezerollc.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:81%)"
+    },
+    {
+      "name": "Jeffery Ely",
+      "title": "System Administrator",
+      "company": "OneZero Solutions",
+      "linkedin_url": "https://www.linkedin.com/in/jeffery-ely-84203326b",
+      "email": "jeffery.ely@onezerollc.com",
+      "priority": "General",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "OneZero Solutions",
+      "linkedin_url": "",
+      "email": "al.sowers@onezerollc.com",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}

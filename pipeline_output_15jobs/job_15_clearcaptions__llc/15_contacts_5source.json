@@ -1,0 +1,112 @@
+{
+  "status": "success",
+  "company": "ClearCaptions, LLC",
+  "domain": "clearcaptions.com",
+  "sources_tried": [
+    "Hunter.io",
+    "Minelead.io"
+  ],
+  "total_found": 11,
+  "contacts": [
+    {
+      "name": "Emily Campbell",
+      "title": "Director of Operations",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/emily-campbell1",
+      "email": "emily.campbell@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Jessica Dwyer",
+      "title": "Director of Learning and Development",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/jessicardwyer",
+      "email": "jessica.dwyer@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Richard Dempsey",
+      "title": "Senior Director of Supply Chain",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/richard-dempsey-791748",
+      "email": "richard.dempsey@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Craig Roth",
+      "title": "Director of Product Management",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/rothandcompany",
+      "email": "craig.roth@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:93%)"
+    },
+    {
+      "name": "Emily Keiper",
+      "title": "Director of Product Management",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/emilykeiper",
+      "email": "emily.keiper@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Tracy Mendonsa",
+      "title": "Director of Government Affairs",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/tracy-mendonsa-b2503868",
+      "email": "tracy.mendonsa@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Jessica Lerner",
+      "title": "Director of Total Rewards",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/jessica-lerner-mba-scp-ccp-crmp-81aa529",
+      "email": "jessica.lerner@clearcaptions.com",
+      "priority": "Secondary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Amber Turner",
+      "title": "Vice President of Sales",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/amber-turner-baa28a87",
+      "email": "amber.turner@clearcaptions.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Mike Strecker",
+      "title": "Chief Compliance Officer",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/mike-strecker-8670366",
+      "email": "mike.strecker@clearcaptions.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:94%)"
+    },
+    {
+      "name": "Anne Gowen",
+      "title": "Vice President of Marketing",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "https://www.linkedin.com/in/annegowen",
+      "email": "anne.gowen@clearcaptions.com",
+      "priority": "Tertiary",
+      "source": "Hunter.io (conf:92%)"
+    },
+    {
+      "name": "Unknown",
+      "title": "Unknown",
+      "company": "ClearCaptions, LLC",
+      "linkedin_url": "",
+      "email": "john.lamczyk@clearcaptions.com",
+      "priority": "General",
+      "source": "Minelead.io"
+    }
+  ],
+  "note": "email_patterns are guesses \u2014 not verified."
+}
