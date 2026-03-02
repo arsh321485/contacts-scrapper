@@ -1,0 +1,16 @@
+# Job Scraper Requirements
+requests==2.31.0
+selenium==4.16.0
+webdriver-manager==4.0.1
+beautifulsoup4==4.12.2
+lxml==5.1.0
+
+# CrewAI Multi-Agent System Requirements
+crewai==0.86.0
+crewai-tools==0.12.1
+langchain-openai==0.2.9
+python-dotenv==1.0.0
+
+# Optional but recommended
+pandas==2.1.4
+openpyxl==3.1.2
