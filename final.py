@@ -70,8 +70,8 @@ MONGO_DB  =os.getenv("MONGO_DB")
 
 # ── Pipeline settings ────────────────────────────────────────────────────────
 JOB_FILE   = "cybersecurity_remote_jobs.json"
-MAX_JOBS   = 15
-OUTPUT_DIR = Path("pipeline_output_15jobs")
+MAX_JOBS   = 2
+OUTPUT_DIR = Path("pipeline_output_15_jobs")
 
 # ╔══════════════════════════════════════════════════════════════════╗
 #  ║                    MONGODB SETUP                               ║
