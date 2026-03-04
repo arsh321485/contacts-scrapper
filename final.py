@@ -69,7 +69,7 @@ MONGO_DB  =os.getenv("MONGO_DB")
 
 
 # ── Pipeline settings ────────────────────────────────────────────────────────
-JOB_FILE   = "cybersecurity_remote_jobs.json"
+JOB_FILE   = "new_jobs_temp.json"
 MAX_JOBS   = 2
 OUTPUT_DIR = Path("pipeline_output_15_jobs")
 

@@ -14,3 +14,7 @@ python-dotenv==1.0.0
 # Optional but recommended
 pandas==2.1.4
 openpyxl==3.1.2
+
+
+#pip install streamlit==1.28.1 pymongo==4.6.0 "pymongo[srv]==4.6.0" streamlit-lottie==0.0.5 httpx==0.25.0 aiohttp==3.9.1
+
