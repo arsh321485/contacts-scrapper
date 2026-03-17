@@ -12609,20 +12609,8025 @@
 
 
 
+# """
+# ╔══════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit             ║
+# ║   WITH GOOGLE SHEETS AUTO-SYNC (Master Contacts)         ║
+# ║   WITH 12-HOUR AUTO-SCHEDULER STATUS IN SIDEBAR (CRON)  ║
+# ║   Reads from MongoDB → secureitlab_job_pipeline          ║
+# ║   ✨ LinkedIn & Email Sync Now Included                   ║
+# ║   🕐 CRON-Ready Scheduler Status                          ║
+# ╠══════════════════════════════════════════════════════════╣
+# ║  Install: pip install streamlit pymongo python-dotenv    ║
+# ║           gspread google-auth openpyxl                   ║
+# ║  Run:     streamlit run streamlit_dashboard.py           ║
+# ║  CRON:    Runs via OS scheduler (Windows/Linux)          ║
+# ╚══════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4/edit"
+# GSHEET_ID         = "1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"  # ← CRON writes this
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# .logs-status{display:flex;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+# .logs-status.running{background:#eff6ff;border-color:#bfdbfe;}
+# .logs-status.success{background:#f0fdf4;border-color:#bbf7d0;}
+# .logs-status.error{background:#fef2f2;border-color:#fecaca;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .pulse-dot{display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:50%;animation:pulse 2s infinite;margin-right:8px;}
+
+# /* ── CRON Scheduler Status ── */
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+
+# /* ── Google Sheet box ── */
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS (Read from CRON scheduler_state.json)
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     """Read scheduler state written by CRON version of main.py"""
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {
+#         "active": False,
+#         "last_run": None,
+#         "next_run": None,
+#         "run_count": 0,
+#         "status": "idle"
+#     }
+
+
+# def get_scheduler_status() -> dict:
+#     """
+#     Get scheduler status. With CRON, we CALCULATE next_run from last_run + 12h
+#     """
+#     state = _read_scheduler_state()
+#     now = datetime.now(timezone.utc).timestamp()
+
+#     seconds_until_next = None
+#     next_run_iso = None
+
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             # Next run = last run + 12 hours
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+
+#     return {
+#         "active":             True,  # CRON always active (OS-level)
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     """Return set of (name_lower, company_lower) already in the sheet."""
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(all_jobs: list) -> dict:
+#     """
+#     Append NEW contacts from MongoDB jobs to Google Sheet.
+#     Includes outreach emails and LinkedIn messages.
+#     Returns: {"appended": int, "skipped": int, "error": str|None}
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=max(ws.col_count, 13))
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows)
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]])
+
+#         existing_keys = _existing_contact_keys(ws)
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+
+#         rows_to_add = []
+#         for job in all_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", ""))
+#             contacts  = job.get("contacts", [])
+
+#             outreach_email_text = ""
+#             emails_data = job.get("agent_outreach_emails") or {}
+#             oq = job.get("agent_outreach_qa") or {}
+#             if isinstance(oq, dict):
+#                 improved = oq.get("improved_emails") or oq.get("ImprovedEmails")
+#                 if improved and isinstance(improved, dict):
+#                     emails_data = improved
+#             if isinstance(emails_data, dict):
+#                 for k, v in emails_data.items():
+#                     kl = k.lower().replace("_","").replace(" ","")
+#                     if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl == "a":
+#                         if isinstance(v, dict):
+#                             subj = v.get("subject") or v.get("Subject","")
+#                             body = v.get("body") or v.get("Body") or v.get("content","")
+#                             outreach_email_text = f"Subject: {subj}\n\n{body}" if subj else body
+#                         elif isinstance(v, str):
+#                             outreach_email_text = v
+#                         break
+#                 if not outreach_email_text:
+#                     for v in emails_data.values():
+#                         if isinstance(v, dict):
+#                             subj = v.get("subject") or v.get("Subject","")
+#                             body = v.get("body") or v.get("Body") or v.get("content","")
+#                             outreach_email_text = f"Subject: {subj}\n\n{body}" if subj else body
+#                         elif isinstance(v, str):
+#                             outreach_email_text = v
+#                         if outreach_email_text:
+#                             break
+
+#             linkedin_msg_text = ""
+#             li_sequences = job.get("agent_linkedin_sequences") or job.get("agent_linkedin") or {}
+#             if isinstance(li_sequences, dict):
+#                 for k in ("connection_request","connection_message","message_1","first_message","intro","sequence_1","message"):
+#                     v = li_sequences.get(k) or li_sequences.get(k.title()) or li_sequences.get(k.upper())
+#                     if v and isinstance(v, str):
+#                         linkedin_msg_text = v; break
+#                     elif v and isinstance(v, dict):
+#                         linkedin_msg_text = v.get("message") or v.get("text") or v.get("content","")
+#                         if linkedin_msg_text: break
+#                 if not linkedin_msg_text:
+#                     for k in ("sequences","messages","steps"):
+#                         seq = li_sequences.get(k)
+#                         if isinstance(seq, list) and seq:
+#                             first = seq[0]
+#                             if isinstance(first, dict):
+#                                 linkedin_msg_text = first.get("message") or first.get("text") or first.get("content","")
+#                             elif isinstance(first, str):
+#                                 linkedin_msg_text = first
+#                             if linkedin_msg_text: break
+#                 if not linkedin_msg_text:
+#                     for v in li_sequences.values():
+#                         if isinstance(v, str) and len(v) > 20:
+#                             linkedin_msg_text = v; break
+#             elif isinstance(li_sequences, list) and li_sequences:
+#                 first = li_sequences[0]
+#                 if isinstance(first, dict):
+#                     linkedin_msg_text = (first.get("message") or first.get("connection_request")
+#                                          or first.get("text") or first.get("content",""))
+#                 elif isinstance(first, str):
+#                     linkedin_msg_text = first
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 rows_to_add.append([
+#                     current_row_count + len(rows_to_add) + 1,
+#                     role    if ci == 0 else "",
+#                     company if ci == 0 else "",
+#                     country if ci == 0 else "",
+#                     prio,
+#                     name,
+#                     title,
+#                     email,
+#                     li,
+#                     source,
+#                     job_score if ci == 0 else "",
+#                     outreach_email_text if ci == 0 else "",
+#                     linkedin_msg_text   if ci == 0 else "",
+#                 ])
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             ws.append_rows(rows_to_add, value_input_option="USER_ENTERED")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "Contacts"
+#     NAVY="1E3A5F"
+#     BLUE="2563EB"
+#     GREY="F8FAFC"
+#     WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC")
+#     border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1")
+#     c=ws["A1"]
+#     c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE)
+#     c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2")
+#     c=ws["A2"]
+#     c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B")
+#     c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h)
+#         c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE)
+#         c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border
+#         ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General")
+#         bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[])
+#         email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill)
+#             cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7]))
+#             cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"
+#     ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO()
+#     wb.save(buf)
+#     buf.seek(0)
+#     return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed   = data.get("passed") or data.get("Passed") or False
+#     rec      = data.get("recommendation") or data.get("Recommendation", "")
+#     issues   = data.get("issues") or data.get("Issues") or []
+#     checklist= data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"
+#     status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]
+#         prio = c.get("priority","General")
+#         email = c.get("email","")
+#         li = c.get("linkedin_url","")
+#         patterns = c.get("email_patterns",[])
+#         src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No email data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
+#             variants["Variant A — Hiring Manager"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
+#             variants["Variant B — CISO / VP Level"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             body = v.get("body") or v.get("Body") or v.get("content","")
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data:
+#         st.info("No service mapping data.")
+#         return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list):
+#                 items = data[key]
+#                 break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data:
+#         st.info("No micro-plan data.")
+#         return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list):
+#                 plans = data[k]
+#                 break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]):
+#                     st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name","")
+#                         te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data:
+#         st.info("No deal assurance data.")
+#         return
+#     if not isinstance(data, dict):
+#         render_json_pretty(data, "Deal Assurance Pack")
+#         return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items():
+#                 st.markdown(f"**{k}:** {v}")
+#         else:
+#             st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR with CRON Scheduler Status
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False
+#         st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # ════════════════════════════════════════════════════════════════════════════
+#     #  🕐 CRON SCHEDULER STATUS DISPLAY
+#     # ════════════════════════════════════════════════════════════════════════════
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler · Managed by Task Scheduler / Cron job")
+
+#     sched = get_scheduler_status()
+
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600
+#             mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet · Check CRON / Task Scheduler setup</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # ════════════════════════════════════════════════════════════════════════════
+#     #  📊 GOOGLE SHEETS SYNC
+#     # ════════════════════════════════════════════════════════════════════════════
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here · LinkedIn messages & outreach emails included")
+
+#     # Auto-sync on first load
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             try:
+#                 _auto_jobs = load_all_jobs()
+#             except Exception:
+#                 _auto_jobs = []
+#             if _auto_jobs:
+#                 _auto_res = sync_contacts_to_gsheet(_auto_jobs)
+#                 if not _auto_res["error"]:
+#                     st.session_state.gsheet_sync_error = ""
+#                     st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                     st.session_state.gsheet_appended = _auto_res["appended"]
+#                 else:
+#                     st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         try:
+#             jobs_for_sync = load_all_jobs()
+#         except Exception:
+#             jobs_for_sync = []
+#         if not jobs_for_sync:
+#             st.warning("No jobs in MongoDB to sync yet.")
+#         else:
+#             with st.spinner("Syncing to Google Sheet…"):
+#                 res = sync_contacts_to_gsheet(jobs_for_sync)
+#             if res["error"]:
+#                 st.session_state.gsheet_sync_error = res["error"]
+#                 st.session_state.gsheet_last_sync = None
+#                 st.session_state.gsheet_appended = None
+#             else:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended = res["appended"]
+#                 st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # ════════════════════════════════════════════════════════════════════════════
+#     #  📚 JOB SELECTOR
+#     # ════════════════════════════════════════════════════════════════════════════
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}")
+#         st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first.")
+#         st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score")
+#         s = f" [{score}/10]" if score else ""
+#         ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs.")
+#         st.stop()
+
+#     sel_label = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear()
+#         st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT — Job Details
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document.")
+#     st.stop()
+
+# company   = job.get("company","Unknown")
+# role  = job.get("role","Unknown")
+# opp_score = job.get("opp_score")
+# p_ok  = job.get("pipeline_ok",False)
+# p_min     = job.get("pipeline_min","?")
+# c_found = job.get("contacts_found",0)
+# c_cov     = job.get("coverage_score")
+# c_domain = job.get("contact_domain","")
+# run_at    = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0])
+#             bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+#             bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name","")
+#                 just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}
+#         items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort","")
+#             demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# with tabs[5]:
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     emails_src = job.get("agent_outreach_emails") or job.get("outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []
+#     contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]
+#     sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]
+#     gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True)
+#         st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True)
+#         st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list:
+#                         render_contacts(ac_list,"Agent Contacts")
+#                     else:
+#                         st.json(agent_contacts)
+#                 else:
+#                     st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2):
+#             render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?")
+#         miss=enf.get("missing_roles",[])
+#         note=enf.get("note","")
+#         ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%")
+#         x2.metric("Missing Roles",len(miss))
+#         x3.metric("Contacts Verified",len(ec))
+#         if miss:
+#             st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note:
+#             st.caption(note)
+#     else:
+#         st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**")
+#     hc2.markdown("**Type**")
+#     hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# """
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit (UPDATED ✅)     ║
+# ║   WITH PROPER EMAIL SYNC TO GOOGLE SHEETS                   ║
+# ║   WITH GOOGLE SHEETS AUTO-SYNC (Master Contacts)            ║
+# ║   WITH 12-HOUR AUTO-SCHEDULER STATUS IN SIDEBAR (CRON)      ║
+# ║   Reads from MongoDB → secureitlab_job_pipeline              ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  ✅ FIXED: Email extraction now works properly
+# ║  📧 Emails sync to Google Sheet Column L  
+# ║  🔗 LinkedIn field empty (not in pipeline yet)
+# ║  🎯 Clean, simple extraction logic
+# ╚══════════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4/edit"
+# GSHEET_ID         = "1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# .logs-status{display:flex;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+# .logs-status.running{background:#eff6ff;border-color:#bfdbfe;}
+# .logs-status.success{background:#f0fdf4;border-color:#bbf7d0;}
+# .logs-status.error{background:#fef2f2;border-color:#fecaca;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .pulse-dot{display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:50%;animation:pulse 2s infinite;margin-right:8px;}
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ EMAIL EXTRACTION FUNCTIONS (FIXED)
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_outreach_email(job: dict) -> str:
+#     """
+#     ✅ FIXED EMAIL EXTRACTION
+    
+#     Extracts from: job['agent_outreach_emails']
+#     Your structure: { "VariantA": { "subject": "...", "body": "..." } }
+#     """
+#     emails_data = job.get("agent_outreach_emails") or {}
+    
+#     if not emails_data:
+#         emails_data = job.get("outreach_emails") or {}
+    
+#     if not emails_data or not isinstance(emails_data, dict):
+#         return ""
+    
+#     # Look for VariantA first
+#     for key, value in emails_data.items():
+#         key_lower = key.lower()
+#         if "variant" in key_lower and "a" in key_lower:
+#             if isinstance(value, dict):
+#                 subject = value.get("subject") or value.get("Subject", "")
+#                 body = value.get("body") or value.get("Body") or value.get("content", "")
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#             elif isinstance(value, str):
+#                 return value
+    
+#     # If no VariantA, take first email
+#     for key, value in emails_data.items():
+#         if isinstance(value, dict):
+#             subject = value.get("subject") or value.get("Subject", "")
+#             body = value.get("body") or value.get("Body") or value.get("content", "")
+#             if body:
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+    
+#     return ""
+
+
+# def extract_linkedin_message(job: dict) -> str:
+#     """
+#     LinkedIn extraction (returns empty - not in your database yet)
+#     Will be populated when you add agent_linkedin_sequences to pipeline
+#     """
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     """Read scheduler state written by CRON version of main.py"""
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {
+#         "active": False,
+#         "last_run": None,
+#         "next_run": None,
+#         "run_count": 0,
+#         "status": "idle"
+#     }
+
+
+# def get_scheduler_status() -> dict:
+#     """Get scheduler status. Calculate next_run from last_run + 12h"""
+#     state = _read_scheduler_state()
+#     now = datetime.now(timezone.utc).timestamp()
+
+#     seconds_until_next = None
+#     next_run_iso = None
+
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+
+#     return {
+#         "active":             True,
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     """Return set of (name_lower, company_lower) already in the sheet."""
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(all_jobs: list) -> dict:
+#     """
+#     ✅ FIXED: Append contacts from MongoDB to Google Sheet with proper email sync
+    
+#     Returns: {"appended": int, "skipped": int, "error": str|None}
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=max(ws.col_count, 13))
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows)
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]])
+
+#         existing_keys = _existing_contact_keys(ws)
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+
+#         rows_to_add = []
+#         for job in all_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
+#             contacts  = job.get("contacts", [])
+
+#             # ✅ USE THE FIXED EMAIL EXTRACTION
+#             outreach_email_text = extract_outreach_email(job)
+#             linkedin_msg_text = extract_linkedin_message(job)
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 rows_to_add.append([
+#                     current_row_count + len(rows_to_add) + 1,
+#                     role    if ci == 0 else "",
+#                     company if ci == 0 else "",
+#                     country if ci == 0 else "",
+#                     prio,
+#                     name,
+#                     title,
+#                     email,
+#                     li,
+#                     source,
+#                     job_score if ci == 0 else "",
+#                     outreach_email_text if ci == 0 else "",  # ✅ EMAIL TEXT HERE
+#                     linkedin_msg_text   if ci == 0 else "",  # Empty for now
+#                 ])
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             ws.append_rows(rows_to_add, value_input_option="USER_ENTERED")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "Contacts"
+#     NAVY="1E3A5F"
+#     BLUE="2563EB"
+#     GREY="F8FAFC"
+#     WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC")
+#     border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1")
+#     c=ws["A1"]
+#     c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE)
+#     c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2")
+#     c=ws["A2"]
+#     c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B")
+#     c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h)
+#         c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE)
+#         c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border
+#         ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General")
+#         bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[])
+#         email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill)
+#             cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7]))
+#             cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"
+#     ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO()
+#     wb.save(buf)
+#     buf.seek(0)
+#     return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed   = data.get("passed") or data.get("Passed") or False
+#     rec      = data.get("recommendation") or data.get("Recommendation", "")
+#     issues   = data.get("issues") or data.get("Issues") or []
+#     checklist= data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"
+#     status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]
+#         prio = c.get("priority","General")
+#         email = c.get("email","")
+#         li = c.get("linkedin_url","")
+#         patterns = c.get("email_patterns",[])
+#         src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No email data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
+#             variants["Variant A — Hiring Manager"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
+#             variants["Variant B — CISO / VP Level"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             body = v.get("body") or v.get("Body") or v.get("content","")
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data:
+#         st.info("No service mapping data.")
+#         return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list):
+#                 items = data[key]
+#                 break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data:
+#         st.info("No micro-plan data.")
+#         return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list):
+#                 plans = data[k]
+#                 break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]):
+#                     st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name","")
+#                         te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data:
+#         st.info("No deal assurance data.")
+#         return
+#     if not isinstance(data, dict):
+#         render_json_pretty(data, "Deal Assurance Pack")
+#         return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items():
+#                 st.markdown(f"**{k}:** {v}")
+#         else:
+#             st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False
+#         st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # CRON Scheduler Status
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler")
+
+#     sched = get_scheduler_status()
+
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600
+#             mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Google Sheets Sync
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here with emails ✅")
+
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             try:
+#                 _auto_jobs = load_all_jobs()
+#             except Exception:
+#                 _auto_jobs = []
+#             if _auto_jobs:
+#                 _auto_res = sync_contacts_to_gsheet(_auto_jobs)
+#                 if not _auto_res["error"]:
+#                     st.session_state.gsheet_sync_error = ""
+#                     st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                     st.session_state.gsheet_appended = _auto_res["appended"]
+#                 else:
+#                     st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         try:
+#             jobs_for_sync = load_all_jobs()
+#         except Exception:
+#             jobs_for_sync = []
+#         if not jobs_for_sync:
+#             st.warning("No jobs in MongoDB to sync yet.")
+#         else:
+#             with st.spinner("Syncing to Google Sheet…"):
+#                 res = sync_contacts_to_gsheet(jobs_for_sync)
+#             if res["error"]:
+#                 st.session_state.gsheet_sync_error = res["error"]
+#                 st.session_state.gsheet_last_sync = None
+#                 st.session_state.gsheet_appended = None
+#             else:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended = res["appended"]
+#                 st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Job Selector
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}")
+#         st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first.")
+#         st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score")
+#         s = f" [{score}/10]" if score else ""
+#         ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs.")
+#         st.stop()
+
+#     sel_label = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear()
+#         st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document.")
+#     st.stop()
+
+# company   = job.get("company","Unknown")
+# role  = job.get("role","Unknown")
+# opp_score = job.get("opp_score")
+# p_ok  = job.get("pipeline_ok",False)
+# p_min     = job.get("pipeline_min","?")
+# c_found = job.get("contacts_found",0)
+# c_cov     = job.get("coverage_score")
+# c_domain = job.get("contact_domain","")
+# run_at    = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0])
+#             bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+#             bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name","")
+#                 just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}
+#         items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort","")
+#             demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# with tabs[5]:
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     emails_src = job.get("agent_outreach_emails") or job.get("outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []
+#     contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]
+#     sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]
+#     gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True)
+#         st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True)
+#         st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list:
+#                         render_contacts(ac_list,"Agent Contacts")
+#                     else:
+#                         st.json(agent_contacts)
+#                 else:
+#                     st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2):
+#             render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?")
+#         miss=enf.get("missing_roles",[])
+#         note=enf.get("note","")
+#         ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%")
+#         x2.metric("Missing Roles",len(miss))
+#         x3.metric("Contacts Verified",len(ec))
+#         if miss:
+#             st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note:
+#             st.caption(note)
+#     else:
+#         st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**")
+#     hc2.markdown("**Type**")
+#     hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# """
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit (UPDATED ✅)     ║
+# ║   WITH PROPER EMAIL SYNC TO GOOGLE SHEETS                   ║
+# ║   WITH GOOGLE SHEETS AUTO-SYNC (Master Contacts)            ║
+# ║   WITH 12-HOUR AUTO-SCHEDULER STATUS IN SIDEBAR (CRON)      ║
+# ║   Reads from MongoDB → secureitlab_job_pipeline              ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  ✅ FIXED: Email extraction now works properly
+# ║  📧 Emails sync to Google Sheet Column L  
+# ║  🔗 LinkedIn field empty (not in pipeline yet)
+# ║  🎯 Clean, simple extraction logic
+# ╚══════════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4/edit"
+# GSHEET_ID         = "1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# .logs-status{display:flex;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+# .logs-status.running{background:#eff6ff;border-color:#bfdbfe;}
+# .logs-status.success{background:#f0fdf4;border-color:#bbf7d0;}
+# .logs-status.error{background:#fef2f2;border-color:#fecaca;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .pulse-dot{display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:50%;animation:pulse 2s infinite;margin-right:8px;}
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ EMAIL EXTRACTION FUNCTIONS (FIXED)
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_outreach_email(job: dict) -> str:
+#     """
+#     ✅ FIXED EMAIL EXTRACTION
+    
+#     Extracts from: job['agent_outreach_emails']
+#     Your structure: { "VariantA": { "subject": "...", "body": "..." } }
+#     """
+#     emails_data = job.get("agent_outreach_emails") or {}
+    
+#     if not emails_data:
+#         emails_data = job.get("outreach_emails") or {}
+    
+#     if not emails_data or not isinstance(emails_data, dict):
+#         return ""
+    
+#     # Look for VariantA first
+#     for key, value in emails_data.items():
+#         key_lower = key.lower()
+#         if "variant" in key_lower and "a" in key_lower:
+#             if isinstance(value, dict):
+#                 subject = value.get("subject") or value.get("Subject", "")
+#                 body = value.get("body") or value.get("Body") or value.get("content", "")
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#             elif isinstance(value, str):
+#                 return value
+    
+#     # If no VariantA, take first email
+#     for key, value in emails_data.items():
+#         if isinstance(value, dict):
+#             subject = value.get("subject") or value.get("Subject", "")
+#             body = value.get("body") or value.get("Body") or value.get("content", "")
+#             if body:
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+    
+#     return ""
+
+
+# def extract_linkedin_message(job: dict) -> str:
+#     """
+#     LinkedIn extraction (returns empty - not in your database yet)
+#     Will be populated when you add agent_linkedin_sequences to pipeline
+#     """
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     """Read scheduler state written by CRON version of main.py"""
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {
+#         "active": False,
+#         "last_run": None,
+#         "next_run": None,
+#         "run_count": 0,
+#         "status": "idle"
+#     }
+
+
+# def get_scheduler_status() -> dict:
+#     """Get scheduler status. Calculate next_run from last_run + 12h"""
+#     state = _read_scheduler_state()
+#     now = datetime.now(timezone.utc).timestamp()
+
+#     seconds_until_next = None
+#     next_run_iso = None
+
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+
+#     return {
+#         "active":             True,
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     """Return set of (name_lower, company_lower) already in the sheet."""
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(all_jobs: list) -> dict:
+#     """
+#     ✅ FIXED: Append contacts from MongoDB to Google Sheet with proper email sync
+    
+#     Returns: {"appended": int, "skipped": int, "error": str|None}
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=max(ws.col_count, 13))
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows)
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]])
+
+#         existing_keys = _existing_contact_keys(ws)
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+
+#         rows_to_add = []
+#         for job in all_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
+#             contacts  = job.get("contacts", [])
+
+#             # ✅ USE THE FIXED EMAIL EXTRACTION
+#             outreach_email_text = extract_outreach_email(job)
+#             linkedin_msg_text = extract_linkedin_message(job)
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 rows_to_add.append([
+#                     current_row_count + len(rows_to_add) + 1,
+#                     role    if ci == 0 else "",
+#                     company if ci == 0 else "",
+#                     country if ci == 0 else "",
+#                     prio,
+#                     name,
+#                     title,
+#                     email,
+#                     li,
+#                     source,
+#                     job_score if ci == 0 else "",
+#                     outreach_email_text,  # ✅ FIXED: ALL contacts get email
+#                     linkedin_msg_text,     # Empty (not in DB yet)
+#                 ])
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             ws.append_rows(rows_to_add, value_input_option="USER_ENTERED")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "Contacts"
+#     NAVY="1E3A5F"
+#     BLUE="2563EB"
+#     GREY="F8FAFC"
+#     WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC")
+#     border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1")
+#     c=ws["A1"]
+#     c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE)
+#     c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2")
+#     c=ws["A2"]
+#     c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B")
+#     c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h)
+#         c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE)
+#         c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border
+#         ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General")
+#         bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[])
+#         email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill)
+#             cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7]))
+#             cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"
+#     ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO()
+#     wb.save(buf)
+#     buf.seek(0)
+#     return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed   = data.get("passed") or data.get("Passed") or False
+#     rec      = data.get("recommendation") or data.get("Recommendation", "")
+#     issues   = data.get("issues") or data.get("Issues") or []
+#     checklist= data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"
+#     status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]
+#         prio = c.get("priority","General")
+#         email = c.get("email","")
+#         li = c.get("linkedin_url","")
+#         patterns = c.get("email_patterns",[])
+#         src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No email data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
+#             variants["Variant A — Hiring Manager"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
+#             variants["Variant B — CISO / VP Level"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             body = v.get("body") or v.get("Body") or v.get("content","")
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data:
+#         st.info("No service mapping data.")
+#         return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list):
+#                 items = data[key]
+#                 break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data:
+#         st.info("No micro-plan data.")
+#         return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list):
+#                 plans = data[k]
+#                 break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]):
+#                     st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name","")
+#                         te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data:
+#         st.info("No deal assurance data.")
+#         return
+#     if not isinstance(data, dict):
+#         render_json_pretty(data, "Deal Assurance Pack")
+#         return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items():
+#                 st.markdown(f"**{k}:** {v}")
+#         else:
+#             st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False
+#         st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # CRON Scheduler Status
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler")
+
+#     sched = get_scheduler_status()
+
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600
+#             mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Google Sheets Sync
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here with emails ✅")
+
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             try:
+#                 _auto_jobs = load_all_jobs()
+#             except Exception:
+#                 _auto_jobs = []
+#             if _auto_jobs:
+#                 _auto_res = sync_contacts_to_gsheet(_auto_jobs)
+#                 if not _auto_res["error"]:
+#                     st.session_state.gsheet_sync_error = ""
+#                     st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                     st.session_state.gsheet_appended = _auto_res["appended"]
+#                 else:
+#                     st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         try:
+#             jobs_for_sync = load_all_jobs()
+#         except Exception:
+#             jobs_for_sync = []
+#         if not jobs_for_sync:
+#             st.warning("No jobs in MongoDB to sync yet.")
+#         else:
+#             with st.spinner("Syncing to Google Sheet…"):
+#                 res = sync_contacts_to_gsheet(jobs_for_sync)
+#             if res["error"]:
+#                 st.session_state.gsheet_sync_error = res["error"]
+#                 st.session_state.gsheet_last_sync = None
+#                 st.session_state.gsheet_appended = None
+#             else:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended = res["appended"]
+#                 st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Job Selector
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}")
+#         st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first.")
+#         st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score")
+#         s = f" [{score}/10]" if score else ""
+#         ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs.")
+#         st.stop()
+
+#     sel_label = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear()
+#         st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document.")
+#     st.stop()
+
+# company   = job.get("company","Unknown")
+# role  = job.get("role","Unknown")
+# opp_score = job.get("opp_score")
+# p_ok  = job.get("pipeline_ok",False)
+# p_min     = job.get("pipeline_min","?")
+# c_found = job.get("contacts_found",0)
+# c_cov     = job.get("coverage_score")
+# c_domain = job.get("contact_domain","")
+# run_at    = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0])
+#             bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+#             bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name","")
+#                 just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}
+#         items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort","")
+#             demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# with tabs[5]:
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     emails_src = job.get("agent_outreach_emails") or job.get("outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []
+#     contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]
+#     sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]
+#     gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True)
+#         st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True)
+#         st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list:
+#                         render_contacts(ac_list,"Agent Contacts")
+#                     else:
+#                         st.json(agent_contacts)
+#                 else:
+#                     st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2):
+#             render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?")
+#         miss=enf.get("missing_roles",[])
+#         note=enf.get("note","")
+#         ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%")
+#         x2.metric("Missing Roles",len(miss))
+#         x3.metric("Contacts Verified",len(ec))
+#         if miss:
+#             st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note:
+#             st.caption(note)
+#     else:
+#         st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**")
+#     hc2.markdown("**Type**")
+#     hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# """
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit (UPDATED ✅)     ║
+# ║   WITH PROPER EMAIL SYNC TO GOOGLE SHEETS                   ║
+# ║   WITH GOOGLE SHEETS AUTO-SYNC (Master Contacts)            ║
+# ║   WITH 12-HOUR AUTO-SCHEDULER STATUS IN SIDEBAR (CRON)      ║
+# ║   Reads from MongoDB → secureitlab_job_pipeline              ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  ✅ FIXED: Email extraction now works properly
+# ║  📧 Emails sync to Google Sheet Column L  
+# ║  🔗 LinkedIn field empty (not in pipeline yet)
+# ║  🎯 Clean, simple extraction logic
+# ╚══════════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4/edit"
+# GSHEET_ID         = "1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# .logs-status{display:flex;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+# .logs-status.running{background:#eff6ff;border-color:#bfdbfe;}
+# .logs-status.success{background:#f0fdf4;border-color:#bbf7d0;}
+# .logs-status.error{background:#fef2f2;border-color:#fecaca;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .pulse-dot{display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:50%;animation:pulse 2s infinite;margin-right:8px;}
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ EMAIL EXTRACTION FUNCTIONS (FIXED)
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_outreach_email(job: dict) -> str:
+#     """
+#     ✅ FIXED EMAIL EXTRACTION
+    
+#     Extracts from: job['agent_outreach_emails']
+#     Your structure: { "VariantA": { "subject": "...", "body": "..." } }
+#     """
+#     emails_data = job.get("agent_outreach_emails") or {}
+    
+#     if not emails_data:
+#         emails_data = job.get("outreach_emails") or {}
+    
+#     if not emails_data or not isinstance(emails_data, dict):
+#         return ""
+    
+#     # Look for VariantA first
+#     for key, value in emails_data.items():
+#         key_lower = key.lower()
+#         if "variant" in key_lower and "a" in key_lower:
+#             if isinstance(value, dict):
+#                 subject = value.get("subject") or value.get("Subject", "")
+#                 body = value.get("body") or value.get("Body") or value.get("content", "")
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#             elif isinstance(value, str):
+#                 return value
+    
+#     # If no VariantA, take first email
+#     for key, value in emails_data.items():
+#         if isinstance(value, dict):
+#             subject = value.get("subject") or value.get("Subject", "")
+#             body = value.get("body") or value.get("Body") or value.get("content", "")
+#             if body:
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+    
+#     return ""
+
+
+# def extract_linkedin_message(job: dict) -> str:
+#     """
+#     LinkedIn extraction (returns empty - not in your database yet)
+#     Will be populated when you add agent_linkedin_sequences to pipeline
+#     """
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     """Read scheduler state written by CRON version of main.py"""
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {
+#         "active": False,
+#         "last_run": None,
+#         "next_run": None,
+#         "run_count": 0,
+#         "status": "idle"
+#     }
+
+
+# def get_scheduler_status() -> dict:
+#     """Get scheduler status. Calculate next_run from last_run + 12h"""
+#     state = _read_scheduler_state()
+#     now = datetime.now(timezone.utc).timestamp()
+
+#     seconds_until_next = None
+#     next_run_iso = None
+
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+
+#     return {
+#         "active":             True,
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     """Return set of (name_lower, company_lower) already in the sheet."""
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(all_jobs: list) -> dict:
+#     """
+#     ✅ FIXED: Append contacts from MongoDB to Google Sheet with proper email sync
+    
+#     Returns: {"appended": int, "skipped": int, "error": str|None}
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=max(ws.col_count, 13))
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows)
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]])
+
+#         # ✅ FIXED: Don't check existing keys - this was skipping ALL contacts!
+#         # existing_keys = _existing_contact_keys(ws)  # REMOVED - caused all to be skipped
+#         existing_keys = set()  # Start fresh - allow all to append
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+
+#         rows_to_add = []
+#         for job in all_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
+#             contacts  = job.get("contacts", [])
+
+#             # ✅ USE THE FIXED EMAIL EXTRACTION
+#             outreach_email_text = extract_outreach_email(job)
+#             linkedin_msg_text = extract_linkedin_message(job)
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 rows_to_add.append([
+#                     current_row_count + len(rows_to_add) + 1,
+#                     role    if ci == 0 else "",
+#                     company if ci == 0 else "",
+#                     country if ci == 0 else "",
+#                     prio,
+#                     name,
+#                     title,
+#                     email,
+#                     li,
+#                     source,
+#                     job_score if ci == 0 else "",
+#                     outreach_email_text,  # ✅ FIXED: ALL contacts get email
+#                     linkedin_msg_text,     # Empty (not in DB yet)
+#                 ])
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             ws.append_rows(rows_to_add, value_input_option="USER_ENTERED")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "Contacts"
+#     NAVY="1E3A5F"
+#     BLUE="2563EB"
+#     GREY="F8FAFC"
+#     WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC")
+#     border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1")
+#     c=ws["A1"]
+#     c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE)
+#     c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2")
+#     c=ws["A2"]
+#     c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B")
+#     c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h)
+#         c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE)
+#         c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border
+#         ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General")
+#         bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[])
+#         email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill)
+#             cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7]))
+#             cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"
+#     ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO()
+#     wb.save(buf)
+#     buf.seek(0)
+#     return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#         "agent_outreach_emails":1,  # ✅ ADD THIS LINE!
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed   = data.get("passed") or data.get("Passed") or False
+#     rec      = data.get("recommendation") or data.get("Recommendation", "")
+#     issues   = data.get("issues") or data.get("Issues") or []
+#     checklist= data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"
+#     status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]
+#         prio = c.get("priority","General")
+#         email = c.get("email","")
+#         li = c.get("linkedin_url","")
+#         patterns = c.get("email_patterns",[])
+#         src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No email data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
+#             variants["Variant A — Hiring Manager"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
+#             variants["Variant B — CISO / VP Level"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             body = v.get("body") or v.get("Body") or v.get("content","")
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data:
+#         st.info("No service mapping data.")
+#         return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list):
+#                 items = data[key]
+#                 break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data:
+#         st.info("No micro-plan data.")
+#         return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list):
+#                 plans = data[k]
+#                 break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]):
+#                     st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name","")
+#                         te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data:
+#         st.info("No deal assurance data.")
+#         return
+#     if not isinstance(data, dict):
+#         render_json_pretty(data, "Deal Assurance Pack")
+#         return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items():
+#                 st.markdown(f"**{k}:** {v}")
+#         else:
+#             st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False
+#         st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # CRON Scheduler Status
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler")
+
+#     sched = get_scheduler_status()
+
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600
+#             mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Google Sheets Sync
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here with emails ✅")
+
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             try:
+#                 _auto_jobs = load_all_jobs()
+#             except Exception:
+#                 _auto_jobs = []
+#             if _auto_jobs:
+#                 _auto_res = sync_contacts_to_gsheet(_auto_jobs)
+#                 if not _auto_res["error"]:
+#                     st.session_state.gsheet_sync_error = ""
+#                     st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                     st.session_state.gsheet_appended = _auto_res["appended"]
+#                 else:
+#                     st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         try:
+#             jobs_for_sync = load_all_jobs()
+#         except Exception:
+#             jobs_for_sync = []
+#         if not jobs_for_sync:
+#             st.warning("No jobs in MongoDB to sync yet.")
+#         else:
+#             with st.spinner("Syncing to Google Sheet…"):
+#                 res = sync_contacts_to_gsheet(jobs_for_sync)
+#             if res["error"]:
+#                 st.session_state.gsheet_sync_error = res["error"]
+#                 st.session_state.gsheet_last_sync = None
+#                 st.session_state.gsheet_appended = None
+#             else:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended = res["appended"]
+#                 st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Job Selector
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}")
+#         st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first.")
+#         st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score")
+#         s = f" [{score}/10]" if score else ""
+#         ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs.")
+#         st.stop()
+
+#     sel_label = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear()
+#         st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document.")
+#     st.stop()
+
+# company   = job.get("company","Unknown")
+# role  = job.get("role","Unknown")
+# opp_score = job.get("opp_score")
+# p_ok  = job.get("pipeline_ok",False)
+# p_min     = job.get("pipeline_min","?")
+# c_found = job.get("contacts_found",0)
+# c_cov     = job.get("coverage_score")
+# c_domain = job.get("contact_domain","")
+# run_at    = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0])
+#             bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+#             bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name","")
+#                 just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}
+#         items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort","")
+#             demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# with tabs[5]:
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     emails_src = job.get("agent_outreach_emails") or job.get("outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []
+#     contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]
+#     sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]
+#     gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True)
+#         st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True)
+#         st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list:
+#                         render_contacts(ac_list,"Agent Contacts")
+#                     else:
+#                         st.json(agent_contacts)
+#                 else:
+#                     st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2):
+#             render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?")
+#         miss=enf.get("missing_roles",[])
+#         note=enf.get("note","")
+#         ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%")
+#         x2.metric("Missing Roles",len(miss))
+#         x3.metric("Contacts Verified",len(ec))
+#         if miss:
+#             st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note:
+#             st.caption(note)
+#     else:
+#         st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**")
+#     hc2.markdown("**Type**")
+#     hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# """
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit (UPDATED ✅)     ║
+# ║   WITH PROPER EMAIL SYNC TO GOOGLE SHEETS                   ║
+# ║   WITH GOOGLE SHEETS AUTO-SYNC (Master Contacts)            ║
+# ║   WITH 12-HOUR AUTO-SCHEDULER STATUS IN SIDEBAR (CRON)      ║
+# ║   Reads from MongoDB → secureitlab_job_pipeline              ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  ✅ FIXED: Email extraction now works properly
+# ║  ✅ FIXED: Sheet forced to 13 columns before append
+# ║  ✅ FIXED: Each row explicitly padded to 13 columns
+# ║  ✅ FIXED: append_rows uses RAW to prevent formula parsing
+# ║  📧 Emails sync to Google Sheet Column L  
+# ║  🔗 LinkedIn field empty (not in pipeline yet)
+# ║  🎯 Clean, simple extraction logic
+# ╚══════════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4/edit"
+# GSHEET_ID         = "1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# .logs-status{display:flex;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+# .logs-status.running{background:#eff6ff;border-color:#bfdbfe;}
+# .logs-status.success{background:#f0fdf4;border-color:#bbf7d0;}
+# .logs-status.error{background:#fef2f2;border-color:#fecaca;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .pulse-dot{display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:50%;animation:pulse 2s infinite;margin-right:8px;}
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ EMAIL EXTRACTION FUNCTIONS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_outreach_email(job: dict) -> str:
+#     """
+#     Extracts from: job['agent_outreach_emails']
+#     Structure: { "VariantA": { "subject": "...", "body": "..." } }
+#     """
+#     emails_data = job.get("agent_outreach_emails") or {}
+
+#     if not emails_data:
+#         emails_data = job.get("outreach_emails") or {}
+
+#     if not emails_data or not isinstance(emails_data, dict):
+#         return ""
+
+#     # Look for VariantA first
+#     for key, value in emails_data.items():
+#         key_lower = key.lower()
+#         if "variant" in key_lower and "a" in key_lower:
+#             if isinstance(value, dict):
+#                 subject = value.get("subject") or value.get("Subject", "")
+#                 body = value.get("body") or value.get("Body") or value.get("content", "")
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#             elif isinstance(value, str):
+#                 return value
+
+#     # If no VariantA, take first email
+#     for key, value in emails_data.items():
+#         if isinstance(value, dict):
+#             subject = value.get("subject") or value.get("Subject", "")
+#             body = value.get("body") or value.get("Body") or value.get("content", "")
+#             if body:
+#                 text = f"Subject: {subject}\n\n{body}" if subject else body
+#                 return text
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+
+#     return ""
+
+
+# def extract_linkedin_message(job: dict) -> str:
+#     """
+#     LinkedIn extraction (returns empty - not in database yet)
+#     """
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     """Read scheduler state written by CRON version of main.py"""
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {
+#         "active": False,
+#         "last_run": None,
+#         "next_run": None,
+#         "run_count": 0,
+#         "status": "idle"
+#     }
+
+
+# def get_scheduler_status() -> dict:
+#     """Get scheduler status. Calculate next_run from last_run + 12h"""
+#     state = _read_scheduler_state()
+#     now = datetime.now(timezone.utc).timestamp()
+
+#     seconds_until_next = None
+#     next_run_iso = None
+
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+
+#     return {
+#         "active":             True,
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     """Return set of (name_lower, company_lower) already in the sheet."""
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(all_jobs: list) -> dict:
+#     """
+#     ✅ FIXED: Append contacts from MongoDB to Google Sheet with proper email sync
+
+#     Fixes applied:
+#       1. ws.resize() now FORCES 13 columns (not max() which could keep it small)
+#       2. Every row is explicitly padded to exactly 13 columns
+#       3. append_rows uses RAW mode to prevent formula-parsing of email text
+#       4. Duplicate key check uses existing sheet data (not empty set)
+
+#     Returns: {"appended": int, "skipped": int, "error": str|None}
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         # ✅ FIX 1: Force exactly 13 columns — do NOT use max(ws.col_count, 13)
+#         # because if the sheet was created with fewer cols, max() keeps it small.
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=13)
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows, value_input_option="RAW")
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]], value_input_option="RAW")
+
+#         # ✅ FIX 4: Read actual existing contacts from the sheet for deduplication
+#         existing_keys = _existing_contact_keys(ws)
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+
+#         rows_to_add = []
+#         for job in all_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
+#             contacts  = job.get("contacts", [])
+
+#             outreach_email_text = extract_outreach_email(job)
+#             linkedin_msg_text   = extract_linkedin_message(job)
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 # ✅ FIX 2: Build row as a named list then pad to exactly 13 columns
+#                 row_data = [
+#                     current_row_count + len(rows_to_add) + 1,  # col A: row number
+#                     role    if ci == 0 else "",                  # col B: Job Role
+#                     company if ci == 0 else "",                  # col C: Company
+#                     country if ci == 0 else "",                  # col D: Country
+#                     prio,                                        # col E: Priority
+#                     name,                                        # col F: Name
+#                     title,                                       # col G: Title
+#                     email,                                       # col H: Contact Email
+#                     li,                                          # col I: LinkedIn URL
+#                     source,                                      # col J: Source
+#                     job_score if ci == 0 else "",                # col K: Job Score
+#                     outreach_email_text,                         # col L: Outreach Email ✅
+#                     linkedin_msg_text,                           # col M: LinkedIn Message
+#                 ]
+
+#                 # Guarantee exactly 13 columns — gspread silently drops trailing empties
+#                 while len(row_data) < 13:
+#                     row_data.append("")
+#                 row_data = row_data[:13]  # cap at 13 just in case
+
+#                 rows_to_add.append(row_data)
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             # ✅ FIX 3: Use RAW to prevent email text being parsed as formulas.
+#             # USER_ENTERED breaks when email body starts with =, -, or + (common in signatures).
+#             ws.append_rows(rows_to_add, value_input_option="RAW")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "Contacts"
+#     NAVY="1E3A5F"
+#     BLUE="2563EB"
+#     GREY="F8FAFC"
+#     WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC")
+#     border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1")
+#     c=ws["A1"]
+#     c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE)
+#     c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2")
+#     c=ws["A2"]
+#     c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B")
+#     c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center")
+#     ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h)
+#         c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE)
+#         c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border
+#         ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General")
+#         bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[])
+#         email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill)
+#             cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7]))
+#             cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"
+#     ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO()
+#     wb.save(buf)
+#     buf.seek(0)
+#     return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#         "agent_outreach_emails":1,
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed   = data.get("passed") or data.get("Passed") or False
+#     rec      = data.get("recommendation") or data.get("Recommendation", "")
+#     issues   = data.get("issues") or data.get("Issues") or []
+#     checklist= data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"
+#     status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]
+#         prio = c.get("priority","General")
+#         email = c.get("email","")
+#         li = c.get("linkedin_url","")
+#         patterns = c.get("email_patterns",[])
+#         src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No email data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
+#             variants["Variant A — Hiring Manager"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
+#             variants["Variant B — CISO / VP Level"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             body = v.get("body") or v.get("Body") or v.get("content","")
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data:
+#         st.info("No service mapping data.")
+#         return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list):
+#                 items = data[key]
+#                 break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data:
+#         st.info("No micro-plan data.")
+#         return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list):
+#                 plans = data[k]
+#                 break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]):
+#                     st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name","")
+#                         te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data:
+#         st.info("No deal assurance data.")
+#         return
+#     if not isinstance(data, dict):
+#         render_json_pretty(data, "Deal Assurance Pack")
+#         return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items():
+#                 st.markdown(f"**{k}:** {v}")
+#         else:
+#             st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False
+#         st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # CRON Scheduler Status
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler")
+
+#     sched = get_scheduler_status()
+
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600
+#             mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Google Sheets Sync
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here with emails ✅")
+
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             try:
+#                 _auto_jobs = load_all_jobs()
+#             except Exception:
+#                 _auto_jobs = []
+#             if _auto_jobs:
+#                 _auto_res = sync_contacts_to_gsheet(_auto_jobs)
+#                 if not _auto_res["error"]:
+#                     st.session_state.gsheet_sync_error = ""
+#                     st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                     st.session_state.gsheet_appended = _auto_res["appended"]
+#                 else:
+#                     st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         try:
+#             jobs_for_sync = load_all_jobs()
+#         except Exception:
+#             jobs_for_sync = []
+#         if not jobs_for_sync:
+#             st.warning("No jobs in MongoDB to sync yet.")
+#         else:
+#             with st.spinner("Syncing to Google Sheet…"):
+#                 res = sync_contacts_to_gsheet(jobs_for_sync)
+#             if res["error"]:
+#                 st.session_state.gsheet_sync_error = res["error"]
+#                 st.session_state.gsheet_last_sync = None
+#                 st.session_state.gsheet_appended = None
+#             else:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended = res["appended"]
+#                 st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     # Job Selector
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}")
+#         st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first.")
+#         st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score")
+#         s = f" [{score}/10]" if score else ""
+#         ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs.")
+#         st.stop()
+
+#     sel_label = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear()
+#         st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document.")
+#     st.stop()
+
+# company   = job.get("company","Unknown")
+# role  = job.get("role","Unknown")
+# opp_score = job.get("opp_score")
+# p_ok  = job.get("pipeline_ok",False)
+# p_min     = job.get("pipeline_min","?")
+# c_found = job.get("contacts_found",0)
+# c_cov     = job.get("coverage_score")
+# c_domain = job.get("contact_domain","")
+# run_at    = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0])
+#             bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+#             bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name","")
+#                 just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}
+#         items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort","")
+#             demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# with tabs[5]:
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     emails_src = job.get("agent_outreach_emails") or job.get("outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []
+#     contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]
+#     sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]
+#     gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True)
+#         st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True)
+#         st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list:
+#                         render_contacts(ac_list,"Agent Contacts")
+#                     else:
+#                         st.json(agent_contacts)
+#                 else:
+#                     st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2):
+#             render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?")
+#         miss=enf.get("missing_roles",[])
+#         note=enf.get("note","")
+#         ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%")
+#         x2.metric("Missing Roles",len(miss))
+#         x3.metric("Contacts Verified",len(ec))
+#         if miss:
+#             st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note:
+#             st.caption(note)
+#     else:
+#         st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**")
+#     hc2.markdown("**Type**")
+#     hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# """
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit (FINAL FIX ✅)  ║
+# ║   WITH PROPER EMAIL SYNC TO GOOGLE SHEETS                   ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  ✅ FIXED: agent_outreach_emails correct field name
+# ║  ✅ FIXED: sync_contacts_to_gsheet fetches fresh from MongoDB
+# ║  ✅ FIXED: Sheet forced to 13 columns before append
+# ║  ✅ FIXED: Each row explicitly padded to 13 columns
+# ║  ✅ FIXED: append_rows uses RAW mode
+# ║  ✅ FIXED: Outreach Emails tab uses correct field
+# ╚══════════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1KbgU-dOpqtjyVS7wJqV3qSL0LMscJpwN5Lr8UVLEedU/edit?usp=sharingt"
+# GSHEET_ID         = "1KbgU-dOpqtjyVS7wJqV3qSL0LMscJpwN5Lr8UVLEedU"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ EMAIL EXTRACTION
+# #  Reads job['agent_outreach_emails'] → { VariantA: {subject, body}, VariantB: ... }
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_outreach_email(job: dict) -> str:
+#     """
+#     Reads agent_outreach_emails from a job document.
+#     Falls back to outreach_emails or emails if needed.
+#     Returns VariantA formatted as 'Subject: ...\n\n<body>'.
+#     """
+#     emails_data = job.get("agent_outreach_emails") or {}
+#     if not emails_data:
+#         emails_data = job.get("outreach_emails") or {}
+#     if not emails_data:
+#         emails_data = job.get("emails") or {}
+#     if not emails_data or not isinstance(emails_data, dict):
+#         return ""
+
+#     # Prefer VariantA
+#     for key, value in emails_data.items():
+#         key_clean = key.lower().replace("_", "").replace(" ", "")
+#         if "varianta" in key_clean or key_clean == "a":
+#             if isinstance(value, dict):
+#                 subject = value.get("subject") or value.get("Subject", "")
+#                 body    = value.get("body")    or value.get("Body")    or value.get("content", "")
+#                 if body:
+#                     return f"Subject: {subject}\n\n{body}" if subject else body
+#             elif isinstance(value, str) and len(value) > 20:
+#                 return value
+
+#     # Fallback: first variant with a body
+#     for key, value in emails_data.items():
+#         if isinstance(value, dict):
+#             subject = value.get("subject") or value.get("Subject", "")
+#             body    = value.get("body")    or value.get("Body")    or value.get("content", "")
+#             if body:
+#                 return f"Subject: {subject}\n\n{body}" if subject else body
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+
+#     return ""
+
+
+# def extract_linkedin_message(job: dict) -> str:
+#     """LinkedIn message — not in DB yet."""
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {"active": False, "last_run": None, "next_run": None, "run_count": 0, "status": "idle"}
+
+
+# def get_scheduler_status() -> dict:
+#     state = _read_scheduler_state()
+#     now   = datetime.now(timezone.utc).timestamp()
+#     seconds_until_next = None
+#     next_run_iso       = None
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso       = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+#     return {
+#         "active":             True,
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(_unused: list) -> dict:
+#     """
+#     ✅ FULLY FIXED sync.
+
+#     - Opens its own fresh MongoDB connection (bypasses Streamlit cache entirely)
+#     - Fetches ALL fields with no projection — agent_outreach_emails is always present
+#     - Forces sheet to 13 cols
+#     - Pads every row to exactly 13 cols
+#     - Uses RAW write mode — email text never parsed as formula
+
+#     The _unused parameter is kept for API compatibility but ignored.
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         # ✅ Fresh direct MongoDB connection — no Streamlit cache, no projection
+#         URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#         DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#         _client = MongoClient(URI, serverSelectionTimeoutMS=6000)
+#         fresh_jobs = list(_client[DB].jobs.find({}))  # no projection = all fields
+#         _client.close()
+
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         # ✅ Force exactly 13 columns
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=13)
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows, value_input_option="RAW")
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]], value_input_option="RAW")
+
+#         existing_keys     = _existing_contact_keys(ws)
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+#         rows_to_add       = []
+
+#         for job in fresh_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
+#             contacts  = job.get("contacts", [])
+
+#             # ✅ Extract email — reads agent_outreach_emails directly from full doc
+#             outreach_email_text = extract_outreach_email(job)
+#             linkedin_msg_text   = extract_linkedin_message(job)
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 # ✅ Explicit 13-column row
+#                 row_data = [
+#                     current_row_count + len(rows_to_add) + 1,  # A
+#                     role    if ci == 0 else "",                  # B
+#                     company if ci == 0 else "",                  # C
+#                     country if ci == 0 else "",                  # D
+#                     prio,                                        # E
+#                     name,                                        # F
+#                     title,                                       # G
+#                     email,                                       # H
+#                     li,                                          # I
+#                     source,                                      # J
+#                     job_score if ci == 0 else "",                # K
+#                     outreach_email_text,                         # L ✅ email
+#                     linkedin_msg_text,                           # M
+#                 ]
+#                 while len(row_data) < 13:
+#                     row_data.append("")
+#                 row_data = row_data[:13]
+
+#                 rows_to_add.append(row_data)
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             # ✅ RAW mode — prevents email body being parsed as a formula
+#             ws.append_rows(rows_to_add, value_input_option="RAW")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook(); ws = wb.active; ws.title = "Contacts"
+#     NAVY="1E3A5F"; BLUE="2563EB"; GREY="F8FAFC"; WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC"); border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1"); c=ws["A1"]; c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE); c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center"); ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2"); c=ws["A2"]; c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B"); c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center"); ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h); c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE); c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border; ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General"); bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[]); email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill); cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7])); cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"; ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#         "agent_outreach_emails":1,
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed    = data.get("passed") or data.get("Passed") or False
+#     rec       = data.get("recommendation") or data.get("Recommendation", "")
+#     issues    = data.get("issues") or data.get("Issues") or []
+#     checklist = data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"; status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]; prio = c.get("priority","General")
+#         email = c.get("email",""); li = c.get("linkedin_url",""); patterns = c.get("email_patterns",[]); src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No email data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
+#             variants["Variant A — Hiring Manager"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
+#             variants["Variant B — CISO / VP Level"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             body = v.get("body") or v.get("Body") or v.get("content","")
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data: st.info("No service mapping data."); return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list): items = data[key]; break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data: st.info("No micro-plan data."); return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list): plans = data[k]; break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]): st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name",""); te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data: st.info("No deal assurance data."); return
+#     if not isinstance(data, dict): render_json_pretty(data, "Deal Assurance Pack"); return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items(): st.markdown(f"**{k}:** {v}")
+#         else: st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False; st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler")
+#     sched = get_scheduler_status()
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600; mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here with emails ✅")
+
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             _auto_res = sync_contacts_to_gsheet([])
+#             if not _auto_res["error"]:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync  = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended   = _auto_res["appended"]
+#             else:
+#                 st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         with st.spinner("Syncing to Google Sheet…"):
+#             res = sync_contacts_to_gsheet([])
+#         if res["error"]:
+#             st.session_state.gsheet_sync_error = res["error"]
+#             st.session_state.gsheet_last_sync  = None
+#             st.session_state.gsheet_appended   = None
+#         else:
+#             st.session_state.gsheet_sync_error = ""
+#             st.session_state.gsheet_last_sync  = datetime.now().strftime("%d %b %Y  %H:%M")
+#             st.session_state.gsheet_appended   = res["appended"]
+#             st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}"); st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first."); st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search   = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score"); s = f" [{score}/10]" if score else ""; ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs."); st.stop()
+
+#     sel_label   = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear(); st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document."); st.stop()
+
+# company   = job.get("company","Unknown"); role = job.get("role","Unknown")
+# opp_score = job.get("opp_score"); p_ok = job.get("pipeline_ok",False); p_min = job.get("pipeline_min","?")
+# c_found   = job.get("contacts_found",0); c_cov = job.get("coverage_score"); c_domain = job.get("contact_domain",""); run_at = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0]); bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"; bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name",""); just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}; items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort",""); demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# with tabs[5]:
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     # ✅ FIXED: reads agent_outreach_emails
+#     emails_src = job.get("agent_outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []; contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]; sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]; gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True); st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True); st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname   = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list: render_contacts(ac_list,"Agent Contacts")
+#                     else:       st.json(agent_contacts)
+#                 else: st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2): render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?"); miss=enf.get("missing_roles",[]); note=enf.get("note",""); ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%"); x2.metric("Missing Roles",len(miss)); x3.metric("Contacts Verified",len(ec))
+#         if miss: st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note: st.caption(note)
+#     else: st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**"); hc2.markdown("**Type**"); hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+# email original above 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# """
+# ╔══════════════════════════════════════════════════════════════╗
+# ║   SecureITLab Pipeline Dashboard — Streamlit (FINAL FIX ✅)  ║
+# ║   WITH PROPER EMAIL + LINKEDIN SYNC TO GOOGLE SHEETS        ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  ✅ FIXED: agent_outreach_emails correct field name
+# ║  ✅ FIXED: agent_linkedin_sequences correct field name
+# ║  ✅ FIXED: sync_contacts_to_gsheet fetches fresh from MongoDB
+# ║  ✅ FIXED: Sheet forced to 13 columns before append
+# ║  ✅ FIXED: Each row explicitly padded to 13 columns
+# ║  ✅ FIXED: append_rows uses RAW mode
+# ║  ✅ FIXED: Outreach Emails tab uses correct field
+# ║  ✅ FIXED: LinkedIn sequences tab renders correctly
+# ╚══════════════════════════════════════════════════════════════╝
+# """
+
+# import io
+# import re
+# import streamlit as st
+# from pymongo import MongoClient
+# import json
+# import time
+# import logging
+# from datetime import datetime, timezone, timedelta
+# from io import StringIO
+# from pathlib import Path
+
+# # ── Google Sheets config ──────────────────────────────────────────────────
+# GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1bVvT1LYqXZEIgijRnZf8Y6rBcGAfbMaWuDgDTkRe80c/edit?usp=sharing"
+# GSHEET_ID         = "1bVvT1LYqXZEIgijRnZf8Y6rBcGAfbMaWuDgDTkRe80c"
+# GSHEET_TAB        = "master_contacts"
+# GCREDS_FILE       = "google_credentials.json"
+# GSHEET_SYNC_STATE = "gsheet_sync_state.json"
+# SCHEDULER_STATE_FILE = "scheduler_state.json"
+
+# # ── Log capture ───────────────────────────────────────────────────────────────
+# _log_capture  = StringIO()
+# _log_handler  = logging.StreamHandler(_log_capture)
+# _log_handler.setLevel(logging.INFO)
+# _log_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+
+# # ── Page config ───────────────────────────────────────────────────────────────
+# st.set_page_config(
+#     page_title="SecureITLab Pipeline",
+#     page_icon="🛡️",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
+
+# LOGIN_USERNAME = "admin"
+# LOGIN_PASSWORD = "secureitlab2024"
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GLOBAL CSS
+# # ══════════════════════════════════════════════════════════════════════════════
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+# :root{--bg:#f4f7fb;--surface:#ffffff;--surface2:#eef2f7;--border:#d9e2ec;--accent:#2563eb;--accent2:#7c3aed;--green:#16a34a;--yellow:#f59e0b;--red:#dc2626;--text:#0f172a;--muted:#64748b;}
+# html,body,[class*="css"]{background-color:var(--bg)!important;color:var(--text)!important;font-family:'DM Sans',sans-serif!important;}
+# .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem 3.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(37,99,235,0.08);text-align:center;}
+# .login-logo{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:.25rem;}
+# .login-subtitle{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+# .login-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.65rem 1rem;color:#b91c1c;font-size:.85rem;margin-top:1rem;}
+# .login-divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;margin:0 auto 2rem;}
+# [data-testid="stSidebar"]{background:var(--surface)!important;border-right:1px solid var(--border)!important;}
+# [data-testid="stSidebar"] *{color:var(--text)!important;}
+# .main .block-container{padding:2rem 2rem 3rem!important;}
+# h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;}
+# .sil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:all 0.25s ease;}
+# .sil-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+# .sil-card-accent{border-left:4px solid var(--accent);}
+# .metric-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+# .metric-tile{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:all .25s ease;}
+# .metric-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.06);}
+# .metric-tile .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent);}
+# .metric-tile .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+# .badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace;}
+# .badge-green{background:#ecfdf5;color:#15803d;}
+# .badge-yellow{background:#fffbeb;color:#b45309;}
+# .badge-red{background:#fef2f2;color:#b91c1c;}
+# .badge-blue{background:#eff6ff;color:#1d4ed8;}
+# .badge-purple{background:#f5f3ff;color:#6d28d9;}
+# .contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.8rem;}
+# .contact-name{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);}
+# .contact-title{color:var(--muted);font-size:.85rem;}
+# .contact-email{font-family:'DM Mono',monospace;color:var(--accent);font-size:.8rem;}
+# .email-box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;line-height:1.65;white-space:pre-wrap;color:var(--text);}
+# .email-subject{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+# .section-label{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.6rem;}
+# .sil-divider{border-top:1px solid var(--border);margin:1rem 0;}
+# [data-testid="stExpander"]{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:10px!important;}
+# [data-testid="stTabs"] button{font-family:'Syne',sans-serif!important;font-weight:600!important;}
+# ::-webkit-scrollbar{width:6px;}
+# ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+# .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
+# @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+# .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
+# .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
+# .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
+# .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
+# .gsheet-box a:hover{text-decoration:underline;}
+# .gsheet-syncing{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#1d4ed8;line-height:1.8;}
+# .gsheet-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:#b91c1c;margin-top:.4rem;line-height:1.6;}
+# </style>
+# """, unsafe_allow_html=True)
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SESSION STATE
+# # ══════════════════════════════════════════════════════════════════════════════
+# for _k, _v in [
+#     ("logged_in",         False),
+#     ("login_error",       ""),
+#     ("current_page",      "dashboard"),
+#     ("gsheet_sync_error", ""),
+#     ("gsheet_last_sync",  None),
+#     ("gsheet_appended",   None),
+# ]:
+#     if _k not in st.session_state:
+#         st.session_state[_k] = _v
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ EMAIL EXTRACTION
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_outreach_email(job: dict) -> str:
+#     """
+#     Reads agent_outreach_emails from a job document.
+#     Falls back to outreach_emails or emails if needed.
+#     Returns VariantA formatted as 'Subject: ...\n\n<body>'.
+#     """
+#     emails_data = job.get("agent_outreach_emails") or {}
+#     if not emails_data:
+#         emails_data = job.get("outreach_emails") or {}
+#     if not emails_data:
+#         emails_data = job.get("emails") or {}
+#     if not emails_data or not isinstance(emails_data, dict):
+#         return ""
+
+#     # Prefer VariantA
+#     for key, value in emails_data.items():
+#         key_clean = key.lower().replace("_", "").replace(" ", "")
+#         if "varianta" in key_clean or key_clean == "a":
+#             if isinstance(value, dict):
+#                 subject = value.get("subject") or value.get("Subject", "")
+#                 body    = value.get("body")    or value.get("Body")    or value.get("content", "")
+#                 if body:
+#                     return f"Subject: {subject}\n\n{body}" if subject else body
+#             elif isinstance(value, str) and len(value) > 20:
+#                 return value
+
+#     # Fallback: first variant with a body
+#     for key, value in emails_data.items():
+#         if isinstance(value, dict):
+#             subject = value.get("subject") or value.get("Subject", "")
+#             body    = value.get("body")    or value.get("Body")    or value.get("content", "")
+#             if body:
+#                 return f"Subject: {subject}\n\n{body}" if subject else body
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ LINKEDIN EXTRACTION — FIXED (was always returning "")
+# #  Reads job['agent_linkedin_sequences'] → { VariantA: {message/body/content}, ... }
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def extract_linkedin_message(job: dict) -> str:
+#     """
+#     Reads agent_linkedin_sequences from a job document.
+#     Falls back to linkedin_sequences if needed.
+#     Returns VariantA message body.
+#     """
+#     msg_data = job.get("agent_linkedin_sequences") or {}
+#     if not msg_data:
+#         msg_data = job.get("linkedin_sequences") or {}
+#     if not msg_data:
+#         msg_data = job.get("linkedin_messages") or {}
+#     if not msg_data or not isinstance(msg_data, dict):
+#         return ""
+
+#     # Prefer VariantA
+#     for key, value in msg_data.items():
+#         key_clean = key.lower().replace("_", "").replace(" ", "")
+#         if "varianta" in key_clean or key_clean == "a":
+#             if isinstance(value, dict):
+#                 body = (value.get("message") or value.get("body")
+#                         or value.get("content") or value.get("text", ""))
+#                 if body:
+#                     return body
+#             elif isinstance(value, str) and len(value) > 20:
+#                 return value
+
+#     # Fallback: first variant with content
+#     for key, value in msg_data.items():
+#         if isinstance(value, dict):
+#             body = (value.get("message") or value.get("body")
+#                     or value.get("content") or value.get("text", ""))
+#             if body:
+#                 return body
+#         elif isinstance(value, str) and len(value) > 20:
+#             return value
+
+#     return ""
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SCHEDULER STATUS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _read_scheduler_state() -> dict:
+#     try:
+#         if Path(SCHEDULER_STATE_FILE).exists():
+#             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {"active": False, "last_run": None, "next_run": None, "run_count": 0, "status": "idle"}
+
+
+# def get_scheduler_status() -> dict:
+#     state = _read_scheduler_state()
+#     now   = datetime.now(timezone.utc).timestamp()
+#     seconds_until_next = None
+#     next_run_iso       = None
+#     if state.get("last_run"):
+#         try:
+#             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
+#             next_ts = last_ts + (12 * 3600)
+#             next_run_iso       = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+#             seconds_until_next = max(0, int(next_ts - now))
+#         except Exception:
+#             pass
+#     return {
+#         "active":             True,
+#         "last_run":           state.get("last_run"),
+#         "next_run":           next_run_iso,
+#         "run_count":          state.get("run_count", 0),
+#         "seconds_until_next": seconds_until_next,
+#     }
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  GOOGLE SHEETS HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+
+# def _gsheet_client():
+#     import gspread
+#     from google.oauth2.service_account import Credentials
+#     scopes = [
+#         "https://www.googleapis.com/auth/spreadsheets",
+#         "https://www.googleapis.com/auth/drive",
+#     ]
+#     creds = Credentials.from_service_account_file(GCREDS_FILE, scopes=scopes)
+#     return gspread.authorize(creds)
+
+
+# def _existing_contact_keys(ws) -> set:
+#     try:
+#         rows = ws.get_all_values()
+#         keys = set()
+#         for row in rows[3:]:
+#             name    = row[5].strip().lower() if len(row) > 5 else ""
+#             company = row[2].strip().lower() if len(row) > 2 else ""
+#             if name:
+#                 keys.add((name, company))
+#         return keys
+#     except Exception:
+#         return set()
+
+
+# def _write_sync_state(appended: int, skipped: int):
+#     try:
+#         Path(GSHEET_SYNC_STATE).write_text(json.dumps({
+#             "last_sync": datetime.now(timezone.utc).isoformat(),
+#             "appended":  appended,
+#             "skipped":   skipped,
+#         }), encoding="utf-8")
+#     except Exception:
+#         pass
+
+
+# def _read_sync_state() -> dict:
+#     try:
+#         if Path(GSHEET_SYNC_STATE).exists():
+#             return json.loads(Path(GSHEET_SYNC_STATE).read_text(encoding="utf-8"))
+#     except Exception:
+#         pass
+#     return {}
+
+
+# def sync_contacts_to_gsheet(_unused: list) -> dict:
+#     """
+#     ✅ FULLY FIXED sync.
+
+#     - Opens its own fresh MongoDB connection (bypasses Streamlit cache entirely)
+#     - Fetches ALL fields with no projection — agent_outreach_emails +
+#       agent_linkedin_sequences are always present
+#     - Forces sheet to 13 cols
+#     - Pads every row to exactly 13 cols
+#     - Uses RAW write mode — email/linkedin text never parsed as formula
+
+#     The _unused parameter is kept for API compatibility but ignored.
+#     """
+#     result = {"appended": 0, "skipped": 0, "error": None}
+
+#     if not Path(GCREDS_FILE).exists():
+#         result["error"] = (
+#             f"'{GCREDS_FILE}' not found. "
+#             "Create a service account on Google Cloud, download JSON, save as google_credentials.json."
+#         )
+#         return result
+
+#     try:
+#         # ✅ Fresh direct MongoDB connection — no Streamlit cache, no projection
+#         URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#         DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#         _client = MongoClient(URI, serverSelectionTimeoutMS=6000)
+#         fresh_jobs = list(_client[DB].jobs.find({}))  # no projection = all fields
+#         _client.close()
+
+#         gc = _gsheet_client()
+#         sh = gc.open_by_key(GSHEET_ID)
+
+#         try:
+#             ws = sh.worksheet(GSHEET_TAB)
+#         except Exception:
+#             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
+
+#         # ✅ Force exactly 13 columns
+#         try:
+#             ws.resize(rows=max(ws.row_count, 10000), cols=13)
+#         except Exception:
+#             pass
+
+#         all_vals = ws.get_all_values()
+#         if not all_vals or len(all_vals) < 3:
+#             header_rows = [
+#                 ["Master Contacts — SecureITLab Pipeline Auto-Sync"] + [""] * 12,
+#                 [f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"] + [""] * 12,
+#                 ["#", "Job Role", "Company", "Country", "Priority",
+#                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
+#                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
+#             ]
+#             ws.update("A1", header_rows, value_input_option="RAW")
+#         else:
+#             ws.update("A2", [[
+#                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
+#             ]], value_input_option="RAW")
+
+#         existing_keys     = _existing_contact_keys(ws)
+#         current_row_count = max(0, len(ws.get_all_values()) - 3)
+#         rows_to_add       = []
+
+#         for job in fresh_jobs:
+#             company   = job.get("company", "")
+#             role      = job.get("role", "")
+#             country   = job.get("country", "?")
+#             job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
+#             contacts  = job.get("contacts", [])
+
+#             # ✅ Extract email — reads agent_outreach_emails directly from full doc
+#             outreach_email_text = extract_outreach_email(job)
+#             # ✅ Extract LinkedIn — reads agent_linkedin_sequences directly from full doc
+#             linkedin_msg_text   = extract_linkedin_message(job)
+
+#             for ci, contact in enumerate(contacts):
+#                 name     = contact.get("name", "").strip()
+#                 prio     = contact.get("priority", "General")
+#                 title    = contact.get("title", "")
+#                 email    = contact.get("email", "")
+#                 li       = contact.get("linkedin_url", "")
+#                 source   = contact.get("source", "")
+#                 patterns = contact.get("email_patterns", [])
+
+#                 if not email and patterns:
+#                     email = patterns[0] + "  (pattern)"
+
+#                 key = (name.lower(), company.strip().lower())
+#                 if not name or key in existing_keys:
+#                     result["skipped"] += 1
+#                     continue
+
+#                 # ✅ Explicit 13-column row
+#                 row_data = [
+#                     current_row_count + len(rows_to_add) + 1,  # A  — row number
+#                     role    if ci == 0 else "",                  # B  — job role
+#                     company if ci == 0 else "",                  # C  — company
+#                     country if ci == 0 else "",                  # D  — country
+#                     prio,                                        # E  — priority
+#                     name,                                        # F  — contact name
+#                     title,                                       # G  — contact title
+#                     email,                                       # H  — contact email
+#                     li,                                          # I  — linkedin url
+#                     source,                                      # J  — source
+#                     job_score if ci == 0 else "",                # K  — job score
+#                     outreach_email_text,                         # L  ✅ outreach email
+#                     linkedin_msg_text,                           # M  ✅ linkedin message
+#                 ]
+#                 while len(row_data) < 13:
+#                     row_data.append("")
+#                 row_data = row_data[:13]
+
+#                 rows_to_add.append(row_data)
+#                 existing_keys.add(key)
+
+#         if rows_to_add:
+#             # ✅ RAW mode — prevents email/linkedin body being parsed as a formula
+#             ws.append_rows(rows_to_add, value_input_option="RAW")
+#             result["appended"] = len(rows_to_add)
+
+#         _write_sync_state(result["appended"], result["skipped"])
+
+#     except Exception as e:
+#         result["error"] = str(e)
+
+#     return result
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  LOGIN
+# # ══════════════════════════════════════════════════════════════════════════════
+# if not st.session_state.logged_in:
+#     _, col, _ = st.columns([1, 1.2, 1])
+#     with col:
+#         st.markdown("<div style='height:6vh'></div>", unsafe_allow_html=True)
+#         st.markdown("""
+#         <div class="login-card">
+#           <div class="login-logo">🛡️ SecureITLab</div>
+#           <div class="login-subtitle">Pipeline Intelligence</div>
+#           <div class="login-divider"></div>
+#         </div>""", unsafe_allow_html=True)
+#         username = st.text_input("Username", placeholder="Enter username", key="lu")
+#         password = st.text_input("Password", placeholder="Enter password", type="password", key="lp")
+#         if st.button("Sign In →", use_container_width=True, type="primary"):
+#             if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+#                 st.session_state.logged_in = True
+#                 st.session_state.login_error = ""
+#                 st.rerun()
+#             else:
+#                 st.session_state.login_error = "Incorrect username or password."
+#         if st.session_state.login_error:
+#             st.markdown(f'<div class="login-error">⚠️ {st.session_state.login_error}</div>', unsafe_allow_html=True)
+#         st.markdown("<div style='text-align:center;font-size:.72rem;color:#94a3b8;margin-top:2rem'>SecureITLab · Confidential</div>", unsafe_allow_html=True)
+#     st.stop()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  EXCEL EXPORT HELPER
+# # ══════════════════════════════════════════════════════════════════════════════
+# def build_contacts_excel(contacts: list, company: str, role: str):
+#     try:
+#         from openpyxl import Workbook
+#         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+#         from openpyxl.utils import get_column_letter
+#     except ImportError:
+#         return None
+#     wb = Workbook(); ws = wb.active; ws.title = "Contacts"
+#     NAVY="1E3A5F"; BLUE="2563EB"; GREY="F8FAFC"; WHITE="FFFFFF"
+#     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
+#     thin=Side(border_style="thin",color="D9E2EC"); border=Border(left=thin,right=thin,top=thin,bottom=thin)
+#     ws.merge_cells("A1:H1"); c=ws["A1"]; c.value=f"Contacts Export  —  {company}  |  {role}"
+#     c.font=Font(name="Arial",bold=True,size=13,color=WHITE); c.fill=PatternFill("solid",fgColor=NAVY)
+#     c.alignment=Alignment(horizontal="center",vertical="center"); ws.row_dimensions[1].height=30
+#     ws.merge_cells("A2:H2"); c=ws["A2"]; c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+#     c.font=Font(name="Arial",size=9,color="64748B"); c.fill=PatternFill("solid",fgColor="F4F7FB")
+#     c.alignment=Alignment(horizontal="center",vertical="center"); ws.row_dimensions[2].height=18
+#     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
+#     col_widths=[4,12,24,32,22,34,42,18]
+#     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
+#         c=ws.cell(row=3,column=ci,value=h); c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+#         c.fill=PatternFill("solid",fgColor=BLUE); c.alignment=Alignment(horizontal="center",vertical="center")
+#         c.border=border; ws.column_dimensions[get_column_letter(ci)].width=w
+#     ws.row_dimensions[3].height=22
+#     for ri,ct in enumerate(contacts,start=4):
+#         prio=ct.get("priority","General"); bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+#         patterns=ct.get("email_patterns",[]); email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+#         row_fill=bg_hex if ri%2==0 else GREY
+#         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
+#             cell=ws.cell(row=ri,column=ci,value=val)
+#             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
+#             cell.fill=PatternFill("solid",fgColor=row_fill); cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7])); cell.border=border
+#         ws.row_dimensions[ri].height=18
+#     ws.freeze_panes="A4"; ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+#     buf=io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MONGODB
+# # ══════════════════════════════════════════════════════════════════════════════
+# @st.cache_resource
+# def get_db():
+#     URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+#     DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+#     return MongoClient(URI, serverSelectionTimeoutMS=6000)[DB]
+
+# @st.cache_data(ttl=60)
+# def load_all_jobs():
+#     return list(get_db().jobs.find({}, {
+#         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
+#         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
+#         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+#         "agent_outreach_emails":1,
+#         "agent_linkedin_sequences":1,   # ✅ ADDED
+#         "linkedin_sequences":1,         # ✅ ADDED fallback
+#     }))
+
+# @st.cache_data(ttl=60)
+# def load_job(job_id):
+#     from bson import ObjectId
+#     return get_db().jobs.find_one({"_id": ObjectId(job_id)})
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  RENDER HELPERS
+# # ══════════════════════════════════════════════════════════════════════════════
+# def badge(text, color="blue"):
+#     return f'<span class="badge badge-{color}">{text}</span>'
+
+# def safe_str(val, limit=300):
+#     if val is None: return "—"
+#     s = str(val)
+#     return s[:limit]+"…" if len(s) > limit else s
+
+# def as_dict(raw):
+#     if isinstance(raw, dict): return raw
+#     if isinstance(raw, list): return next((x for x in raw if isinstance(x, dict)), {})
+#     return {}
+
+# def render_json_pretty(data, title=""):
+#     if not data: return
+#     with st.expander(f"📄 Raw JSON — {title}", expanded=False):
+#         st.code(json.dumps(data, indent=2, default=str), language="json")
+
+# def render_qa_block(data, label):
+#     if not data:
+#         st.markdown(f'<div class="sil-card"><b>{label}</b> — <i>No data</i></div>', unsafe_allow_html=True)
+#         return
+#     data = as_dict(data)
+#     if not data: return
+#     passed    = data.get("passed") or data.get("Passed") or False
+#     rec       = data.get("recommendation") or data.get("Recommendation", "")
+#     issues    = data.get("issues") or data.get("Issues") or []
+#     checklist = data.get("checklist") or data.get("Checklist") or []
+#     color = "green" if passed else "yellow"; status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+#     html = f"""<div class="sil-card sil-card-accent">
+#       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+#         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
+#         {badge(status, color)}
+#       </div>"""
+#     if rec: html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.6rem">📝 {rec}</div>'
+#     if checklist:
+#         html += '<div style="font-size:.82rem;margin-bottom:.5rem">'
+#         for item in (checklist if isinstance(checklist, list) else [checklist]):
+#             if isinstance(item, dict):
+#                 ip = item.get("pass") or item.get("passed") or item.get("status","") == "pass"
+#                 nm = item.get("item") or item.get("name") or item.get("check","")
+#                 nt = item.get("reason") or item.get("note") or item.get("issue","")
+#                 html += f'<div style="margin:.25rem 0">{"✅" if ip else "❌"} <b>{nm}</b>'
+#                 if nt: html += f' — <span style="color:var(--muted)">{str(nt)[:120]}</span>'
+#                 html += '</div>'
+#         html += '</div>'
+#     if issues:
+#         html += '<div style="margin-top:.5rem">'
+#         for iss in (issues if isinstance(issues, list) else [issues])[:4]:
+#             txt = iss if isinstance(iss, str) else json.dumps(iss)
+#             html += f'<div style="font-size:.8rem;color:#f59e0b;margin:.2rem 0">• {txt[:200]}</div>'
+#         html += '</div>'
+#     st.markdown(html + '</div>', unsafe_allow_html=True)
+
+# def render_contacts(contacts, title="Contacts"):
+#     if not contacts:
+#         st.info("No contacts found for this job.")
+#         return
+#     pri_color = {"Primary":"red","Secondary":"yellow","Tertiary":"blue","General":"purple"}
+#     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
+#     cols = st.columns(2)
+#     for i, c in enumerate(contacts):
+#         col = cols[i % 2]; prio = c.get("priority","General")
+#         email = c.get("email",""); li = c.get("linkedin_url",""); patterns = c.get("email_patterns",[]); src = c.get("source","")
+#         with col:
+#             html = f"""<div class="contact-card">
+#               <div style="display:flex;justify-content:space-between;align-items:flex-start">
+#                 <div><div class="contact-name">{c.get('name','—')}</div>
+#                 <div class="contact-title">{c.get('title','—')}</div></div>
+#                 {badge(prio, pri_color.get(prio,'blue'))}
+#               </div>"""
+#             if email:      html += f'<div class="contact-email" style="margin-top:.5rem">✉️ {email}</div>'
+#             elif patterns: html += f'<div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">📧 {patterns[0]}</div>'
+#             if li:         html += f'<div style="font-size:.75rem;margin-top:.3rem"><a href="{li}" target="_blank" style="color:var(--accent);text-decoration:none">🔗 LinkedIn</a></div>'
+#             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
+#             st.markdown(html + '</div>', unsafe_allow_html=True)
+
+
+# # ✅ FIXED render_emails — also handles 'message'/'text' keys used by LinkedIn sequences
+# def render_emails(emails_data):
+#     if not emails_data:
+#         st.info("No data available.")
+#         return
+#     emails_data = as_dict(emails_data)
+#     if not emails_data: return
+#     variants = {}
+#     for k, v in emails_data.items():
+#         kl = k.lower().replace("_","").replace(" ","")
+#         if any(x in kl for x in ["varianta","variant_a","emaila","sequencea","msga"]) or kl=="a":
+#             variants["Variant A"] = v
+#         elif any(x in kl for x in ["variantb","variant_b","emailb","sequenceb","msgb"]) or kl=="b":
+#             variants["Variant B"] = v
+#         else:
+#             variants[k] = v
+#     for label, v in variants.items():
+#         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
+#         if isinstance(v, dict):
+#             subj = v.get("subject") or v.get("Subject","")
+#             # ✅ FIXED: also check 'message' and 'text' keys (used by LinkedIn sequences)
+#             body = (v.get("body") or v.get("Body") or v.get("message")
+#                     or v.get("Message") or v.get("content") or v.get("text",""))
+#             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
+#             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
+#             else:    st.code(json.dumps(v, indent=2), language="json")
+#         elif isinstance(v, str):
+#             st.markdown(f'<div class="email-box">{v}</div>', unsafe_allow_html=True)
+#         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+
+# def render_service_mapping(data):
+#     if not data: st.info("No service mapping data."); return
+#     items = data if isinstance(data, list) else []
+#     if not items and isinstance(data, dict):
+#         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
+#             if isinstance(data.get(key), list): items = data[key]; break
+#         if not items: items = [data]
+#     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
+#     for item in items:
+#         if not isinstance(item, dict): continue
+#         svc  = item.get("service") or item.get("Service") or item.get("name","")
+#         fit  = (item.get("fit") or item.get("classification") or item.get("Fit") or item.get("status","")).upper()
+#         why  = item.get("justification") or item.get("rationale") or item.get("why","")
+#         reqs = item.get("requirements_addressed") or item.get("requirements") or ""
+#         eng  = item.get("engagement_type") or item.get("engagement","")
+#         color = fit_colors.get(fit,"blue")
+#         html = f"""<div class="sil-card" style="margin-bottom:.75rem">
+#           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+#             <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--text)">{svc}</span>
+#             {badge(fit or "MAPPED", color) if fit else ""}
+#           </div>"""
+#         if why:  html += f'<div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">💡 {str(why)[:250]}</div>'
+#         if reqs:
+#             rs = ", ".join(reqs) if isinstance(reqs, list) else str(reqs)
+#             html += f'<div style="font-size:.8rem;color:var(--muted)">📌 {rs[:200]}</div>'
+#         if eng:  html += f'<div style="font-size:.8rem;color:var(--accent2);margin-top:.3rem">🔧 {eng}</div>'
+#         st.markdown(html + '</div>', unsafe_allow_html=True)
+#     render_json_pretty(data, "Service Mapping")
+
+# def render_microplans(data):
+#     if not data: st.info("No micro-plan data."); return
+#     plans = data if isinstance(data, list) else []
+#     if not plans and isinstance(data, dict):
+#         for k in ("plans","micro_plans","microplans","top_3","improvements"):
+#             if isinstance(data.get(k), list): plans = data[k]; break
+#         if not plans: plans = [data]
+#     for i, plan in enumerate(plans[:3], 1):
+#         if not isinstance(plan, dict): continue
+#         title = plan.get("title") or plan.get("objective") or plan.get("name") or f"Plan {i}"
+#         weeks = plan.get("duration") or plan.get("timeline","")
+#         obj   = plan.get("objective") or plan.get("goal","")
+#         kpis  = plan.get("kpis") or plan.get("KPIs") or []
+#         tasks = plan.get("tasks") or plan.get("workstreams") or []
+#         with st.expander(f"📋 Plan {i}: {title} {f'({weeks})' if weeks else ''}", expanded=(i==1)):
+#             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
+#             if kpis:
+#                 st.markdown("**KPIs:**")
+#                 for kpi in (kpis if isinstance(kpis, list) else [kpis]): st.markdown(f"• {kpi}")
+#             if tasks:
+#                 st.markdown("**Tasks:**")
+#                 for t in (tasks if isinstance(tasks, list) else [tasks]):
+#                     if isinstance(t, dict):
+#                         tn = t.get("task") or t.get("name",""); te = t.get("effort") or t.get("duration","")
+#                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
+#                     else: st.markdown(f"• {t}")
+#             st.code(json.dumps(plan, indent=2, default=str), language="json")
+
+# def render_deal_assurance(data):
+#     if not data: st.info("No deal assurance data."); return
+#     if not isinstance(data, dict): render_json_pretty(data, "Deal Assurance Pack"); return
+#     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
+#     if evp:
+#         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
+#         st.markdown(f'<div class="sil-card sil-card-accent" style="font-size:.9rem;line-height:1.7">{evp}</div>', unsafe_allow_html=True)
+#     caps = data.get("mandatory_capabilities") or data.get("capabilities_checklist") or []
+#     if caps:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">✅ Mandatory Capabilities</div>', unsafe_allow_html=True)
+#         c1, c2 = st.columns(2)
+#         for i, cap in enumerate(caps if isinstance(caps, list) else [caps]):
+#             (c1 if i%2==0 else c2).markdown(f"✅ {cap}")
+#     risk = data.get("risk_mitigation") or data.get("RiskMitigation","")
+#     if risk:
+#         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
+#         if isinstance(risk, dict):
+#             for k, v in risk.items(): st.markdown(f"**{k}:** {v}")
+#         else: st.markdown(str(risk))
+#     render_json_pretty(data, "Deal Assurance Pack")
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  SIDEBAR
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.sidebar:
+#     st.markdown("""<div style="padding:.75rem 0 1.25rem">
+#       <div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:#2563eb">🛡️ SecureITLab</div>
+#       <div style="font-size:.72rem;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem">Pipeline Intelligence</div>
+#     </div>""", unsafe_allow_html=True)
+
+#     if st.button("🚪 Logout", use_container_width=True):
+#         st.session_state.logged_in = False; st.rerun()
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     st.markdown("**🕐 Auto-Scheduler (CRON)**")
+#     st.caption("Runs every 12 hours via OS scheduler")
+#     sched = get_scheduler_status()
+#     if sched.get("active"):
+#         secs = sched.get("seconds_until_next")
+#         if secs is not None:
+#             hrs = secs // 3600; mins = (secs % 3600) // 60
+#             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
+#             next_label = f"Next: <b>{countdown}</b>"
+#         else:
+#             next_label = "Next: calculating…"
+#         last = (sched.get("last_run") or "")[:19]
+#         st.markdown(f"""<div class="sched-on">
+#           🟢 <b>Auto-Scheduler: ON</b><br>
+#           <span style="color:#64748b;font-size:.8rem">{next_label}</span><br>
+#           <span style="color:#64748b;font-size:.8rem">Runs every 12h · #{sched.get('run_count',0)} so far</span><br>
+#           <span style="color:#64748b;font-size:.75rem">Last: {last} UTC</span>
+#         </div>""", unsafe_allow_html=True)
+#     else:
+#         st.markdown("""<div class="sched-paused">
+#           🔴 <b>Scheduler Inactive</b><br>
+#           <span style="color:#64748b;font-size:.8rem">No runs yet</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     st.markdown("**📊 Master Contacts — Google Sheet**")
+#     st.caption("All contacts synced here with emails + LinkedIn ✅")
+
+#     if not st.session_state.get("gsheet_auto_synced"):
+#         st.session_state["gsheet_auto_synced"] = True
+#         if Path(GCREDS_FILE).exists():
+#             _auto_res = sync_contacts_to_gsheet([])
+#             if not _auto_res["error"]:
+#                 st.session_state.gsheet_sync_error = ""
+#                 st.session_state.gsheet_last_sync  = datetime.now().strftime("%d %b %Y  %H:%M")
+#                 st.session_state.gsheet_appended   = _auto_res["appended"]
+#             else:
+#                 st.session_state.gsheet_sync_error = _auto_res["error"]
+
+#     sync_col1, sync_col2 = st.columns([3, 1])
+#     with sync_col1:
+#         sync_clicked = st.button("🔄  Sync Now", use_container_width=True)
+#     with sync_col2:
+#         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
+
+#     if sync_clicked:
+#         with st.spinner("Syncing to Google Sheet…"):
+#             res = sync_contacts_to_gsheet([])
+#         if res["error"]:
+#             st.session_state.gsheet_sync_error = res["error"]
+#             st.session_state.gsheet_last_sync  = None
+#             st.session_state.gsheet_appended   = None
+#         else:
+#             st.session_state.gsheet_sync_error = ""
+#             st.session_state.gsheet_last_sync  = datetime.now().strftime("%d %b %Y  %H:%M")
+#             st.session_state.gsheet_appended   = res["appended"]
+#             st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+
+#     disk_state = _read_sync_state()
+#     last_sync  = (
+#         st.session_state.gsheet_last_sync
+#         or (disk_state.get("last_sync","")[:16].replace("T"," ") if disk_state.get("last_sync") else None)
+#     )
+#     appended = st.session_state.gsheet_appended if st.session_state.gsheet_appended is not None else disk_state.get("appended","")
+
+#     if st.session_state.gsheet_sync_error:
+#         short_err = st.session_state.gsheet_sync_error[:180]
+#         st.markdown(f'<div class="gsheet-error">❌ Sync failed<br>{short_err}</div>', unsafe_allow_html=True)
+#     else:
+#         last_line  = f"Last synced: <b>{last_sync}</b>" if last_sync else "Not synced yet"
+#         added_line = f" · <b>+{appended}</b> new" if appended and appended != 0 else (" · ✓ up to date" if appended == 0 and last_sync else "")
+#         st.markdown(f"""<div class="gsheet-box">
+#           🟢 <b>Google Sheet live</b><br>
+#           <a href="{GSHEET_URL}" target="_blank">📋 Open master_contacts ↗</a><br>
+#           <span style="font-size:.76rem;color:#64748b">{last_line}{added_line}</span>
+#         </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+
+#     try:
+#         all_jobs = load_all_jobs()
+#     except Exception as e:
+#         st.error(f"MongoDB error: {e}"); st.stop()
+
+#     if not all_jobs:
+#         st.warning("No jobs in MongoDB yet. Run the pipeline first."); st.stop()
+
+#     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
+
+#     search   = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+#     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
+
+#     def job_label(j):
+#         score = j.get("opp_score"); s = f" [{score}/10]" if score else ""; ok = "✅" if j.get("pipeline_ok") else "❌"
+#         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
+
+#     if not filtered:
+#         st.warning("No matching jobs."); st.stop()
+
+#     sel_label   = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+#     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     ok_count = sum(1 for j in all_jobs if j.get("pipeline_ok"))
+#     total_c  = sum(j.get("contacts_found", 0) for j in all_jobs)
+#     st.markdown(f"""<div style="font-size:.75rem;color:#64748b">
+#       <div>✅ Pipeline OK: <b style="color:#16a34a">{ok_count}/{len(all_jobs)}</b></div>
+#       <div>👥 Total Contacts: <b style="color:#2563eb">{total_c}</b></div>
+#     </div>""", unsafe_allow_html=True)
+
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     if st.button("🔄 Refresh Data", use_container_width=True):
+#         st.cache_data.clear(); st.rerun()
+
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  MAIN CONTENT
+# # ══════════════════════════════════════════════════════════════════════════════
+# with st.spinner("Loading job…"):
+#     job = load_job(selected_id)
+
+# if not job:
+#     st.error("Could not load job document."); st.stop()
+
+# company   = job.get("company","Unknown"); role = job.get("role","Unknown")
+# opp_score = job.get("opp_score"); p_ok = job.get("pipeline_ok",False); p_min = job.get("pipeline_min","?")
+# c_found   = job.get("contacts_found",0); c_cov = job.get("coverage_score"); c_domain = job.get("contact_domain",""); run_at = job.get("run_at","")
+
+# st.markdown(f"""<div style="margin-bottom:1.75rem">
+#   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
+#     Job #{job.get('job_number','?')} · {run_at[:10] if run_at else ''}
+#   </div>
+#   <h1 style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#0f172a;margin:0;line-height:1.15">{role}</h1>
+#   <div style="font-size:1.05rem;color:#64748b;margin-top:.3rem">
+#     @ <span style="color:#334155;font-weight:600">{company}</span>
+#     {f'<span style="color:#cbd5e1;margin:0 .5rem">·</span><span style="font-family:DM Mono,monospace;font-size:.82rem;color:#94a3b8">{c_domain}</span>' if c_domain else ""}
+#   </div>
+# </div>""", unsafe_allow_html=True)
+
+# try:
+#     sn = float(str(opp_score).split("/")[0].split(".")[0]) if opp_score else 0
+#     sc = "#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
+# except Exception:
+#     sc = "#2563eb"
+
+# st.markdown(f"""<div class="metric-row">
+#   <div class="metric-tile"><div class="val" style="color:{sc}">{f"{opp_score}/10" if opp_score else "—"}</div><div class="lbl">Opportunity Score</div></div>
+#   <div class="metric-tile"><div class="val">{c_found}</div><div class="lbl">Contacts Found</div></div>
+#   <div class="metric-tile"><div class="val">{f"{c_cov}%" if c_cov else "—"}</div><div class="lbl">Contact Coverage</div></div>
+#   <div class="metric-tile"><div class="val" style="color:{'#16a34a' if p_ok else '#dc2626'}">{'✅ OK' if p_ok else '❌ Failed'}</div><div class="lbl">Pipeline ({p_min} min)</div></div>
+# </div>""", unsafe_allow_html=True)
+
+# tabs = st.tabs(["📋 Job & Enrichment","🎯 Service Mapping","🔍 Fit / Gap",
+#                 "🛠️ Capability & Plans","📦 Deal Assurance","✉️ Outreach Emails",
+#                 "👥 Contacts","✅ QA Gates","🗄️ Raw Data"])
+
+# with tabs[0]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">📄 Job Research</div>', unsafe_allow_html=True)
+#         jr = as_dict(job.get("agent_job_research") or {})
+#         if jr:
+#             for lbl, keys in [("Job Role",["job_role","Job Role","role","title"]),("Company",["company_name","Company Name","company"]),("Location",["location","Location"]),("URL",["organization_url","Organization URL","url"])]:
+#                 val = next((jr.get(k) for k in keys if jr.get(k)), None)
+#                 if val: st.markdown(f"**{lbl}:** {val}")
+#             desc = jr.get("job_description") or jr.get("Job Description","")
+#             if desc:
+#                 st.markdown("**Job Description:**")
+#                 st.markdown(f'<div class="sil-card" style="font-size:.85rem;line-height:1.7;max-height:300px;overflow-y:auto">{desc[:2000]}</div>', unsafe_allow_html=True)
+#             render_json_pretty(jr,"Job Research")
+#         else: st.info("No job research data.")
+#     with c2:
+#         st.markdown('<div class="section-label">🏢 Company Enrichment</div>', unsafe_allow_html=True)
+#         enr = as_dict(job.get("agent_enrichment") or {})
+#         if enr:
+#             for lbl, keys in [("Industry",["industry","Industry"]),("Company Size",["company_size","size"]),("Regulatory Env",["regulatory_environment","regulatory"]),("Certifications",["certifications","Certifications"]),("Tech Stack",["tech_stack","technology_stack"]),("Security Maturity",["security_maturity","maturity"])]:
+#                 val = next((enr.get(k) for k in keys if enr.get(k)), None)
+#                 if val:
+#                     if isinstance(val, list): val = ", ".join(str(v) for v in val)
+#                     st.markdown(f"**{lbl}:** {safe_str(val,200)}")
+#             render_json_pretty(enr,"Enrichment")
+#         else: st.info("No enrichment data.")
+
+# with tabs[1]:
+#     st.markdown('<div class="section-label">🗺️ Service Mapping Matrix</div>', unsafe_allow_html=True)
+#     render_service_mapping(job.get("agent_service_mapping"))
+
+# with tabs[2]:
+#     fg = as_dict(job.get("agent_fit_gap") or {})
+#     if opp_score:
+#         try:
+#             sn=float(str(opp_score).split("/")[0]); bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"; bp=int(sn/10*100)
+#             st.markdown(f"""<div style="margin-bottom:1.5rem">
+#               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+#                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
+#                 <span style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:{bc}">{opp_score}/10</span>
+#               </div>
+#               <div style="background:#e2e8f0;border-radius:4px;height:8px">
+#                 <div style="background:{bc};width:{bp}%;height:100%;border-radius:4px"></div>
+#               </div></div>""", unsafe_allow_html=True)
+#         except Exception: pass
+#     st.markdown('<div class="section-label">📊 Service Classifications</div>', unsafe_allow_html=True)
+#     services = []
+#     if isinstance(fg, dict):
+#         for k in ("services","classifications","service_classifications","items","fit_gap"):
+#             v = fg.get(k)
+#             if isinstance(v, list): services = v; break
+#         if not services and (fg.get("service") or fg.get("Service")): services = [fg]
+#     elif isinstance(fg, list): services = fg
+#     if services:
+#         buckets = {"STRONG FIT":[],"PARTIAL FIT":[],"GAP":[]}
+#         for s in services:
+#             if not isinstance(s, dict): continue
+#             fit = (s.get("fit") or s.get("classification") or s.get("Fit","")).upper()
+#             if "STRONG" in fit: buckets["STRONG FIT"].append(s)
+#             elif "PARTIAL" in fit: buckets["PARTIAL FIT"].append(s)
+#             elif "GAP" in fit: buckets["GAP"].append(s)
+#         c1,c2,c3=st.columns(3)
+#         cm={"STRONG FIT":"#16a34a","PARTIAL FIT":"#f59e0b","GAP":"#dc2626"}
+#         bgm={"STRONG FIT":"#f0fdf4","PARTIAL FIT":"#fffbeb","GAP":"#fef2f2"}
+#         bdm={"STRONG FIT":"#bbf7d0","PARTIAL FIT":"#fde68a","GAP":"#fecaca"}
+#         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
+#             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
+#             for s in items:
+#                 svc=s.get("service") or s.get("Service") or s.get("name",""); just=s.get("justification") or s.get("reason","")
+#                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
+#     elif fg: st.json(fg)
+#     else: st.info("No fit/gap data.")
+#     render_json_pretty(job.get("agent_fit_gap"),"Fit/Gap Analysis")
+
+# with tabs[3]:
+#     c1, c2 = st.columns(2)
+#     with c1:
+#         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
+#         cap = job.get("agent_capability") or {}; items_cap = cap if isinstance(cap,list) else []
+#         if not items_cap and isinstance(cap,dict):
+#             for k in ("improvements","recommendations","capabilities","items"):
+#                 v=cap.get(k)
+#                 if isinstance(v,list): items_cap=v; break
+#             if not items_cap: items_cap=[cap]
+#         for item in items_cap:
+#             if not isinstance(item,dict): continue
+#             title=item.get("title") or item.get("gap") or item.get("service","")
+#             rec=item.get("recommendation") or item.get("steps","")
+#             effort=item.get("build_effort") or item.get("effort",""); demand=item.get("market_demand") or item.get("priority","")
+#             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
+#               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
+#               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
+#               {f'<div style="font-size:.75rem;color:var(--accent2);margin-top:.3rem">Priority: {demand} · Effort: {effort}</div>' if demand or effort else ""}
+#             </div>""", unsafe_allow_html=True)
+#         if not items_cap: render_json_pretty(cap,"Capability Improvement")
+#     with c2:
+#         st.markdown('<div class="section-label">📅 Maturity Micro-Plans</div>', unsafe_allow_html=True)
+#         render_microplans(job.get("agent_microplans"))
+
+# with tabs[4]:
+#     render_deal_assurance(job.get("agent_deal_assurance"))
+
+# # ══════════════════════════════════════════════════════════════════════════════
+# #  ✅ TAB 5 — OUTREACH EMAILS + LINKEDIN SEQUENCES (FULLY FIXED)
+# # ══════════════════════════════════════════════════════════════════════════════
+# with tabs[5]:
+#     # ── Outreach Emails ──────────────────────────────────────────────────────
+#     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
+#     emails_src = job.get("agent_outreach_emails") or {}
+#     oq = as_dict(job.get("agent_outreach_qa") or {})
+#     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
+#     if improved:
+#         st.info("⚡ Showing QA-improved versions")
+#         render_emails(improved)
+#         with st.expander("📬 Original (pre-QA) versions"):
+#             render_emails(emails_src)
+#     else:
+#         render_emails(emails_src)
+
+#     # ── LinkedIn Sequences ───────────────────────────────────────────────────
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🔗 LinkedIn Message Sequences</div>', unsafe_allow_html=True)
+#     # ✅ FIXED: reads agent_linkedin_sequences (confirmed field name from MongoDB screenshot)
+#     li_src = (job.get("agent_linkedin_sequences")
+#               or job.get("linkedin_sequences")
+#               or job.get("linkedin_messages")
+#               or {})
+#     if li_src:
+#         render_emails(li_src)
+#     else:
+#         st.info("No LinkedIn sequence data available.")
+
+# with tabs[6]:
+#     contacts = job.get("contacts") or []; contact_sources = job.get("contact_sources") or []
+#     pri=[c for c in contacts if c.get("priority")=="Primary"]; sec=[c for c in contacts if c.get("priority")=="Secondary"]
+#     ter=[c for c in contacts if c.get("priority")=="Tertiary"]; gen=[c for c in contacts if c.get("priority")=="General"]
+#     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
+#       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#2563eb">{len(ter)}</div><div class="lbl">Tertiary</div></div>
+#       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
+#     </div>""", unsafe_allow_html=True)
+#     if contact_sources:
+#         st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True); st.markdown("")
+#     missing = job.get("missing_roles") or []
+#     if missing:
+#         st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True); st.markdown("")
+#     if contacts:
+#         excel_bytes = build_contacts_excel(contacts, company, role)
+#         if excel_bytes:
+#             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
+#             fname   = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+#             btn_col, _ = st.columns([1,3])
+#             with btn_col:
+#                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
+#         st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#         pri_filter = st.multiselect("Filter by priority",["Primary","Secondary","Tertiary","General"],default=["Primary","Secondary","Tertiary","General"])
+#         shown = [c for c in contacts if c.get("priority","General") in pri_filter]
+#         render_contacts(shown, f"Contacts ({len(shown)} shown)")
+#         agent_contacts = job.get("agent_prospect_contacts") or {}
+#         if agent_contacts:
+#             with st.expander("🤖 CrewAI Agent's Contact Search"):
+#                 if isinstance(agent_contacts,dict):
+#                     ac_list=agent_contacts.get("contacts") or []
+#                     if ac_list: render_contacts(ac_list,"Agent Contacts")
+#                     else:       st.json(agent_contacts)
+#                 else: st.json(agent_contacts)
+#     else:
+#         st.info("No contacts found for this job.")
+
+# with tabs[7]:
+#     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
+#     c1, c2 = st.columns(2)
+#     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
+#         with (c1 if i%2==0 else c2): render_qa_block(job.get(key), lbl)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
+#     enf = as_dict(job.get("agent_prospect_enforcer") or {})
+#     if enf:
+#         cov=enf.get("coverage_score","?"); miss=enf.get("missing_roles",[]); note=enf.get("note",""); ec=enf.get("contacts",[])
+#         x1,x2,x3=st.columns(3)
+#         x1.metric("Coverage Score",f"{cov}%"); x2.metric("Missing Roles",len(miss)); x3.metric("Contacts Verified",len(ec))
+#         if miss: st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+#         if note: st.caption(note)
+#     else: st.info("No enforcer data.")
+
+# with tabs[8]:
+#     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
+#     rows=[]
+#     for k,v in job.items():
+#         if k=="_id": continue
+#         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
+#     hc1,hc2,hc3=st.columns([3,1,1])
+#     hc1.markdown("**Field**"); hc2.markdown("**Type**"); hc3.markdown("**Len**")
+#     for r in rows:
+#         rc1,rc2,rc3=st.columns([3,1,1])
+#         rc1.code(r["Field"],language=None)
+#         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
+#         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
+#     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+#     for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("LinkedIn Sequences","agent_linkedin_sequences"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+#         data=job.get(key)
+#         if data:
+#             with st.expander(f"📄 {lbl}"):
+#                 st.code(json.dumps(data,indent=2,default=str),language="json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 """
-╔══════════════════════════════════════════════════════════╗
-║   SecureITLab Pipeline Dashboard — Streamlit             ║
-║   WITH GOOGLE SHEETS AUTO-SYNC (Master Contacts)         ║
-║   WITH 12-HOUR AUTO-SCHEDULER STATUS IN SIDEBAR (CRON)  ║
-║   Reads from MongoDB → secureitlab_job_pipeline          ║
-║   ✨ LinkedIn & Email Sync Now Included                   ║
-║   🕐 CRON-Ready Scheduler Status                          ║
-╠══════════════════════════════════════════════════════════╣
-║  Install: pip install streamlit pymongo python-dotenv    ║
-║           gspread google-auth openpyxl                   ║
-║  Run:     streamlit run streamlit_dashboard.py           ║
-║  CRON:    Runs via OS scheduler (Windows/Linux)          ║
-╚══════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════╗
+║   SecureITLab Pipeline Dashboard — Streamlit (FINAL FIX ✅)  ║
+║   WITH PROPER EMAIL + LINKEDIN SYNC TO GOOGLE SHEETS        ║
+╠══════════════════════════════════════════════════════════════╣
+║  ✅ FIXED: agent_outreach_emails correct field name
+║  ✅ FIXED: agent_linkedin_sequences correct field name
+║  ✅ FIXED: sync_contacts_to_gsheet fetches fresh from MongoDB
+║  ✅ FIXED: Sheet forced to 13 columns before append
+║  ✅ FIXED: Each row explicitly padded to 13 columns
+║  ✅ FIXED: append_rows uses RAW mode
+║  ✅ FIXED: Outreach Emails tab uses correct field
+║  ✅ FIXED: LinkedIn sequences tab renders correctly
+╚══════════════════════════════════════════════════════════════╝
 """
 
 import io
@@ -12637,12 +20642,12 @@ from io import StringIO
 from pathlib import Path
 
 # ── Google Sheets config ──────────────────────────────────────────────────
-GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4/edit"
-GSHEET_ID         = "1u9_Fqy8a8Dj-yX8FwZtkFfw_3BLdpmBbtagH2IjhyV4"
+GSHEET_URL        = "https://docs.google.com/spreadsheets/d/1bVvT1LYqXZEIgijRnZf8Y6rBcGAfbMaWuDgDTkRe80c/edit?usp=sharing"
+GSHEET_ID         = "1bVvT1LYqXZEIgijRnZf8Y6rBcGAfbMaWuDgDTkRe80c"
 GSHEET_TAB        = "master_contacts"
 GCREDS_FILE       = "google_credentials.json"
 GSHEET_SYNC_STATE = "gsheet_sync_state.json"
-SCHEDULER_STATE_FILE = "scheduler_state.json"  # ← CRON writes this
+SCHEDULER_STATE_FILE = "scheduler_state.json"
 
 # ── Log capture ───────────────────────────────────────────────────────────────
 _log_capture  = StringIO()
@@ -12705,18 +20710,9 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif!important;color:var(--text)!important;
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 .pipeline-log{background:#0f172a;color:#10b981;border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.8;max-height:700px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b;}
-.logs-status{display:flex;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
-.logs-status.running{background:#eff6ff;border-color:#bfdbfe;}
-.logs-status.success{background:#f0fdf4;border-color:#bbf7d0;}
-.logs-status.error{background:#fef2f2;border-color:#fecaca;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-.pulse-dot{display:inline-block;width:10px;height:10px;background:#2563eb;border-radius:50%;animation:pulse 2s infinite;margin-right:8px;}
-
-/* ── CRON Scheduler Status ── */
 .sched-on{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#15803d;line-height:1.6;}
 .sched-paused{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-top:.5rem;font-size:.8rem;color:#92400e;line-height:1.6;}
-
-/* ── Google Sheet box ── */
 .gsheet-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;margin-top:.4rem;font-size:.82rem;color:#15803d;line-height:1.8;}
 .gsheet-box a{color:#1d4ed8!important;font-weight:700;text-decoration:none;}
 .gsheet-box a:hover{text-decoration:underline;}
@@ -12742,47 +20738,150 @@ for _k, _v in [
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  SCHEDULER STATUS HELPERS (Read from CRON scheduler_state.json)
+#  ✅ EMAIL EXTRACTION
+# ══════════════════════════════════════════════════════════════════════════════
+
+def extract_outreach_email(job: dict) -> str:
+    """
+    Reads agent_outreach_emails from a job document.
+    Falls back to outreach_emails or emails if needed.
+    Returns VariantA formatted as 'Subject: ...\n\n<body>'.
+    """
+    emails_data = job.get("agent_outreach_emails") or {}
+    if not emails_data:
+        emails_data = job.get("outreach_emails") or {}
+    if not emails_data:
+        emails_data = job.get("emails") or {}
+    if not emails_data or not isinstance(emails_data, dict):
+        return ""
+
+    # Prefer VariantA
+    for key, value in emails_data.items():
+        key_clean = key.lower().replace("_", "").replace(" ", "")
+        if "varianta" in key_clean or key_clean == "a":
+            if isinstance(value, dict):
+                subject = value.get("subject") or value.get("Subject", "")
+                body    = value.get("body")    or value.get("Body")    or value.get("content", "")
+                if body:
+                    return f"Subject: {subject}\n\n{body}" if subject else body
+            elif isinstance(value, str) and len(value) > 20:
+                return value
+
+    # Fallback: first variant with a body
+    for key, value in emails_data.items():
+        if isinstance(value, dict):
+            subject = value.get("subject") or value.get("Subject", "")
+            body    = value.get("body")    or value.get("Body")    or value.get("content", "")
+            if body:
+                return f"Subject: {subject}\n\n{body}" if subject else body
+        elif isinstance(value, str) and len(value) > 20:
+            return value
+
+    return ""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ✅ LINKEDIN EXTRACTION — FIXED
+#  Real DB structure:
+#    agent_linkedin_sequences → {
+#        "linkedin_sequences": { "sequence_1": {...}, "sequence_2": {...} },
+#        "meta": { ... }
+#    }
+#  Also handles fallback: agent_linkedin_sequences → { "raw_text": "..." }
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _extract_body_from_variants(variants: dict) -> str:
+    """Given a dict of variant_key → {message/body/content/text}, return first body found."""
+    if not isinstance(variants, dict):
+        return ""
+
+    def _body(v):
+        if isinstance(v, dict):
+            return (v.get("message") or v.get("body")
+                    or v.get("content") or v.get("text") or "")
+        if isinstance(v, str) and len(v) > 20:
+            return v
+        return ""
+
+    # Prefer sequence_1 / variant_a / "a"
+    for key, value in variants.items():
+        kc = key.lower().replace("_", "").replace(" ", "")
+        if any(x in kc for x in ["sequence1", "seq1", "varianta", "variant1", "msga", "msg1"]) or kc in ("a", "1"):
+            b = _body(value)
+            if b:
+                return b
+
+    # Fallback: first variant with any body
+    for key, value in variants.items():
+        b = _body(value)
+        if b:
+            return b
+
+    return ""
+
+
+def extract_linkedin_message(job: dict) -> str:
+    """
+    Reads agent_linkedin_sequences from a job document.
+    Handles nested structure:
+      agent_linkedin_sequences.linkedin_sequences → variants dict
+    Also handles raw_text fallback.
+    """
+    outer = job.get("agent_linkedin_sequences") or {}
+    if not outer or not isinstance(outer, dict):
+        # try flat fallback fields
+        outer = job.get("linkedin_sequences") or job.get("linkedin_messages") or {}
+    if not outer:
+        return ""
+
+    # ✅ CASE 1 (most jobs): nested → outer["linkedin_sequences"] has the variants
+    inner = outer.get("linkedin_sequences")
+    if inner and isinstance(inner, dict):
+        body = _extract_body_from_variants(inner)
+        if body:
+            return body
+
+    # ✅ CASE 2 (Fuji Electric etc): outer["raw_text"] is a plain string
+    raw = outer.get("raw_text")
+    if raw and isinstance(raw, str) and len(raw) > 20:
+        return raw
+
+    # ✅ CASE 3: outer itself IS the variants dict (no nesting)
+    body = _extract_body_from_variants(outer)
+    if body:
+        return body
+
+    return ""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SCHEDULER STATUS HELPERS
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _read_scheduler_state() -> dict:
-    """Read scheduler state written by CRON version of main.py"""
     try:
         if Path(SCHEDULER_STATE_FILE).exists():
             return json.loads(Path(SCHEDULER_STATE_FILE).read_text(encoding="utf-8"))
     except Exception:
         pass
-    return {
-        "active": False,
-        "last_run": None,
-        "next_run": None,
-        "run_count": 0,
-        "status": "idle"
-    }
+    return {"active": False, "last_run": None, "next_run": None, "run_count": 0, "status": "idle"}
 
 
 def get_scheduler_status() -> dict:
-    """
-    Get scheduler status. With CRON, we CALCULATE next_run from last_run + 12h
-    """
     state = _read_scheduler_state()
-    now = datetime.now(timezone.utc).timestamp()
-
+    now   = datetime.now(timezone.utc).timestamp()
     seconds_until_next = None
-    next_run_iso = None
-
+    next_run_iso       = None
     if state.get("last_run"):
         try:
             last_ts = datetime.fromisoformat(state["last_run"]).timestamp()
-            # Next run = last run + 12 hours
             next_ts = last_ts + (12 * 3600)
-            next_run_iso = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
+            next_run_iso       = datetime.fromtimestamp(next_ts, tz=timezone.utc).isoformat()
             seconds_until_next = max(0, int(next_ts - now))
         except Exception:
             pass
-
     return {
-        "active":             True,  # CRON always active (OS-level)
+        "active":             True,
         "last_run":           state.get("last_run"),
         "next_run":           next_run_iso,
         "run_count":          state.get("run_count", 0),
@@ -12806,7 +20905,6 @@ def _gsheet_client():
 
 
 def _existing_contact_keys(ws) -> set:
-    """Return set of (name_lower, company_lower) already in the sheet."""
     try:
         rows = ws.get_all_values()
         keys = set()
@@ -12840,11 +20938,18 @@ def _read_sync_state() -> dict:
     return {}
 
 
-def sync_contacts_to_gsheet(all_jobs: list) -> dict:
+def sync_contacts_to_gsheet(_unused: list) -> dict:
     """
-    Append NEW contacts from MongoDB jobs to Google Sheet.
-    Includes outreach emails and LinkedIn messages.
-    Returns: {"appended": int, "skipped": int, "error": str|None}
+    ✅ FULLY FIXED sync.
+
+    - Opens its own fresh MongoDB connection (bypasses Streamlit cache entirely)
+    - Fetches ALL fields with no projection — agent_outreach_emails +
+      agent_linkedin_sequences are always present
+    - Forces sheet to 13 cols
+    - Pads every row to exactly 13 cols
+    - Uses RAW write mode — email/linkedin text never parsed as formula
+
+    The _unused parameter is kept for API compatibility but ignored.
     """
     result = {"appended": 0, "skipped": 0, "error": None}
 
@@ -12856,6 +20961,13 @@ def sync_contacts_to_gsheet(all_jobs: list) -> dict:
         return result
 
     try:
+        # ✅ Fresh direct MongoDB connection — no Streamlit cache, no projection
+        URI = st.secrets.get("MONGO_URI", "mongodb://localhost:27017")
+        DB  = st.secrets.get("MONGO_DB",  "secureitlab_job_pipeline")
+        _client = MongoClient(URI, serverSelectionTimeoutMS=6000)
+        fresh_jobs = list(_client[DB].jobs.find({}))  # no projection = all fields
+        _client.close()
+
         gc = _gsheet_client()
         sh = gc.open_by_key(GSHEET_ID)
 
@@ -12864,8 +20976,9 @@ def sync_contacts_to_gsheet(all_jobs: list) -> dict:
         except Exception:
             ws = sh.add_worksheet(title=GSHEET_TAB, rows=10000, cols=13)
 
+        # ✅ Force exactly 13 columns
         try:
-            ws.resize(rows=max(ws.row_count, 10000), cols=max(ws.col_count, 13))
+            ws.resize(rows=max(ws.row_count, 10000), cols=13)
         except Exception:
             pass
 
@@ -12878,83 +20991,27 @@ def sync_contacts_to_gsheet(all_jobs: list) -> dict:
                  "Name", "Title / Role", "Contact Email", "LinkedIn URL", "Source", "Job Score",
                  "Outreach Email (Agent)", "LinkedIn Message (Agent)"],
             ]
-            ws.update("A1", header_rows)
+            ws.update("A1", header_rows, value_input_option="RAW")
         else:
             ws.update("A2", [[
                 f"Last synced: {datetime.now().strftime('%d %b %Y  %H:%M')} UTC  ·  Append-only, duplicates skipped"
-            ]])
+            ]], value_input_option="RAW")
 
-        existing_keys = _existing_contact_keys(ws)
+        existing_keys     = _existing_contact_keys(ws)
         current_row_count = max(0, len(ws.get_all_values()) - 3)
+        rows_to_add       = []
 
-        rows_to_add = []
-        for job in all_jobs:
+        for job in fresh_jobs:
             company   = job.get("company", "")
             role      = job.get("role", "")
             country   = job.get("country", "?")
-            job_score = str(job.get("opp_score", ""))
+            job_score = str(job.get("opp_score", "")) if job.get("opp_score") else ""
             contacts  = job.get("contacts", [])
 
-            outreach_email_text = ""
-            emails_data = job.get("agent_outreach_emails") or {}
-            oq = job.get("agent_outreach_qa") or {}
-            if isinstance(oq, dict):
-                improved = oq.get("improved_emails") or oq.get("ImprovedEmails")
-                if improved and isinstance(improved, dict):
-                    emails_data = improved
-            if isinstance(emails_data, dict):
-                for k, v in emails_data.items():
-                    kl = k.lower().replace("_","").replace(" ","")
-                    if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl == "a":
-                        if isinstance(v, dict):
-                            subj = v.get("subject") or v.get("Subject","")
-                            body = v.get("body") or v.get("Body") or v.get("content","")
-                            outreach_email_text = f"Subject: {subj}\n\n{body}" if subj else body
-                        elif isinstance(v, str):
-                            outreach_email_text = v
-                        break
-                if not outreach_email_text:
-                    for v in emails_data.values():
-                        if isinstance(v, dict):
-                            subj = v.get("subject") or v.get("Subject","")
-                            body = v.get("body") or v.get("Body") or v.get("content","")
-                            outreach_email_text = f"Subject: {subj}\n\n{body}" if subj else body
-                        elif isinstance(v, str):
-                            outreach_email_text = v
-                        if outreach_email_text:
-                            break
-
-            linkedin_msg_text = ""
-            li_sequences = job.get("agent_linkedin_sequences") or job.get("agent_linkedin") or {}
-            if isinstance(li_sequences, dict):
-                for k in ("connection_request","connection_message","message_1","first_message","intro","sequence_1","message"):
-                    v = li_sequences.get(k) or li_sequences.get(k.title()) or li_sequences.get(k.upper())
-                    if v and isinstance(v, str):
-                        linkedin_msg_text = v; break
-                    elif v and isinstance(v, dict):
-                        linkedin_msg_text = v.get("message") or v.get("text") or v.get("content","")
-                        if linkedin_msg_text: break
-                if not linkedin_msg_text:
-                    for k in ("sequences","messages","steps"):
-                        seq = li_sequences.get(k)
-                        if isinstance(seq, list) and seq:
-                            first = seq[0]
-                            if isinstance(first, dict):
-                                linkedin_msg_text = first.get("message") or first.get("text") or first.get("content","")
-                            elif isinstance(first, str):
-                                linkedin_msg_text = first
-                            if linkedin_msg_text: break
-                if not linkedin_msg_text:
-                    for v in li_sequences.values():
-                        if isinstance(v, str) and len(v) > 20:
-                            linkedin_msg_text = v; break
-            elif isinstance(li_sequences, list) and li_sequences:
-                first = li_sequences[0]
-                if isinstance(first, dict):
-                    linkedin_msg_text = (first.get("message") or first.get("connection_request")
-                                         or first.get("text") or first.get("content",""))
-                elif isinstance(first, str):
-                    linkedin_msg_text = first
+            # ✅ Extract email — reads agent_outreach_emails directly from full doc
+            outreach_email_text = extract_outreach_email(job)
+            # ✅ Extract LinkedIn — reads agent_linkedin_sequences directly from full doc
+            linkedin_msg_text   = extract_linkedin_message(job)
 
             for ci, contact in enumerate(contacts):
                 name     = contact.get("name", "").strip()
@@ -12973,25 +21030,32 @@ def sync_contacts_to_gsheet(all_jobs: list) -> dict:
                     result["skipped"] += 1
                     continue
 
-                rows_to_add.append([
-                    current_row_count + len(rows_to_add) + 1,
-                    role    if ci == 0 else "",
-                    company if ci == 0 else "",
-                    country if ci == 0 else "",
-                    prio,
-                    name,
-                    title,
-                    email,
-                    li,
-                    source,
-                    job_score if ci == 0 else "",
-                    outreach_email_text if ci == 0 else "",
-                    linkedin_msg_text   if ci == 0 else "",
-                ])
+                # ✅ Explicit 13-column row
+                row_data = [
+                    current_row_count + len(rows_to_add) + 1,  # A  — row number
+                    role    if ci == 0 else "",                  # B  — job role
+                    company if ci == 0 else "",                  # C  — company
+                    country if ci == 0 else "",                  # D  — country
+                    prio,                                        # E  — priority
+                    name,                                        # F  — contact name
+                    title,                                       # G  — contact title
+                    email,                                       # H  — contact email
+                    li,                                          # I  — linkedin url
+                    source,                                      # J  — source
+                    job_score if ci == 0 else "",                # K  — job score
+                    outreach_email_text,                         # L  ✅ outreach email
+                    linkedin_msg_text,                           # M  ✅ linkedin message
+                ]
+                while len(row_data) < 13:
+                    row_data.append("")
+                row_data = row_data[:13]
+
+                rows_to_add.append(row_data)
                 existing_keys.add(key)
 
         if rows_to_add:
-            ws.append_rows(rows_to_add, value_input_option="USER_ENTERED")
+            # ✅ RAW mode — prevents email/linkedin body being parsed as a formula
+            ws.append_rows(rows_to_add, value_input_option="RAW")
             result["appended"] = len(rows_to_add)
 
         _write_sync_state(result["appended"], result["skipped"])
@@ -13040,59 +21104,34 @@ def build_contacts_excel(contacts: list, company: str, role: str):
         from openpyxl.utils import get_column_letter
     except ImportError:
         return None
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Contacts"
-    NAVY="1E3A5F"
-    BLUE="2563EB"
-    GREY="F8FAFC"
-    WHITE="FFFFFF"
+    wb = Workbook(); ws = wb.active; ws.title = "Contacts"
+    NAVY="1E3A5F"; BLUE="2563EB"; GREY="F8FAFC"; WHITE="FFFFFF"
     pri_colors={"Primary":("FEF2F2","B91C1C"),"Secondary":("FFFBEB","B45309"),"Tertiary":("EFF6FF","1D4ED8"),"General":("F5F3FF","6D28D9")}
-    thin=Side(border_style="thin",color="D9E2EC")
-    border=Border(left=thin,right=thin,top=thin,bottom=thin)
-    ws.merge_cells("A1:H1")
-    c=ws["A1"]
-    c.value=f"Contacts Export  —  {company}  |  {role}"
-    c.font=Font(name="Arial",bold=True,size=13,color=WHITE)
-    c.fill=PatternFill("solid",fgColor=NAVY)
-    c.alignment=Alignment(horizontal="center",vertical="center")
-    ws.row_dimensions[1].height=30
-    ws.merge_cells("A2:H2")
-    c=ws["A2"]
-    c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
-    c.font=Font(name="Arial",size=9,color="64748B")
-    c.fill=PatternFill("solid",fgColor="F4F7FB")
-    c.alignment=Alignment(horizontal="center",vertical="center")
-    ws.row_dimensions[2].height=18
+    thin=Side(border_style="thin",color="D9E2EC"); border=Border(left=thin,right=thin,top=thin,bottom=thin)
+    ws.merge_cells("A1:H1"); c=ws["A1"]; c.value=f"Contacts Export  —  {company}  |  {role}"
+    c.font=Font(name="Arial",bold=True,size=13,color=WHITE); c.fill=PatternFill("solid",fgColor=NAVY)
+    c.alignment=Alignment(horizontal="center",vertical="center"); ws.row_dimensions[1].height=30
+    ws.merge_cells("A2:H2"); c=ws["A2"]; c.value=f"Generated: {datetime.now().strftime('%d %b %Y  %H:%M')}   ·   {len(contacts)} contacts"
+    c.font=Font(name="Arial",size=9,color="64748B"); c.fill=PatternFill("solid",fgColor="F4F7FB")
+    c.alignment=Alignment(horizontal="center",vertical="center"); ws.row_dimensions[2].height=18
     headers=["#","Priority","Name","Title / Role","Company","Email","LinkedIn URL","Source"]
     col_widths=[4,12,24,32,22,34,42,18]
     for ci,(h,w) in enumerate(zip(headers,col_widths),1):
-        c=ws.cell(row=3,column=ci,value=h)
-        c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
-        c.fill=PatternFill("solid",fgColor=BLUE)
-        c.alignment=Alignment(horizontal="center",vertical="center")
-        c.border=border
-        ws.column_dimensions[get_column_letter(ci)].width=w
+        c=ws.cell(row=3,column=ci,value=h); c.font=Font(name="Arial",bold=True,size=10,color=WHITE)
+        c.fill=PatternFill("solid",fgColor=BLUE); c.alignment=Alignment(horizontal="center",vertical="center")
+        c.border=border; ws.column_dimensions[get_column_letter(ci)].width=w
     ws.row_dimensions[3].height=22
     for ri,ct in enumerate(contacts,start=4):
-        prio=ct.get("priority","General")
-        bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
-        patterns=ct.get("email_patterns",[])
-        email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
+        prio=ct.get("priority","General"); bg_hex,fg_hex=pri_colors.get(prio,(WHITE,"0F172A"))
+        patterns=ct.get("email_patterns",[]); email_val=ct.get("email") or (patterns[0]+"  (pattern)" if patterns else "")
         row_fill=bg_hex if ri%2==0 else GREY
         for ci,val in enumerate([ri-3,prio,ct.get("name",""),ct.get("title",""),ct.get("company",""),email_val,ct.get("linkedin_url",""),ct.get("source","")],1):
             cell=ws.cell(row=ri,column=ci,value=val)
             cell.font=Font(name="Arial",size=9,bold=(ci==2),color=fg_hex if ci==2 else "0F172A")
-            cell.fill=PatternFill("solid",fgColor=row_fill)
-            cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7]))
-            cell.border=border
+            cell.fill=PatternFill("solid",fgColor=row_fill); cell.alignment=Alignment(vertical="center",wrap_text=(ci in [4,7])); cell.border=border
         ws.row_dimensions[ri].height=18
-    ws.freeze_panes="A4"
-    ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
-    buf=io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return buf.getvalue()
+    ws.freeze_panes="A4"; ws.auto_filter.ref=f"A3:H{3+len(contacts)}"
+    buf=io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -13110,6 +21149,9 @@ def load_all_jobs():
         "_id":1,"company":1,"role":1,"job_number":1,"opp_score":1,
         "contacts_found":1,"pipeline_ok":1,"coverage_score":1,
         "run_at":1,"contact_domain":1,"contacts":1,"country":1,
+        "agent_outreach_emails":1,
+        "agent_linkedin_sequences":1,   # ✅ ADDED
+        "linkedin_sequences":1,         # ✅ ADDED fallback
     }))
 
 @st.cache_data(ttl=60)
@@ -13145,12 +21187,11 @@ def render_qa_block(data, label):
         return
     data = as_dict(data)
     if not data: return
-    passed   = data.get("passed") or data.get("Passed") or False
-    rec      = data.get("recommendation") or data.get("Recommendation", "")
-    issues   = data.get("issues") or data.get("Issues") or []
-    checklist= data.get("checklist") or data.get("Checklist") or []
-    color = "green" if passed else "yellow"
-    status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
+    passed    = data.get("passed") or data.get("Passed") or False
+    rec       = data.get("recommendation") or data.get("Recommendation", "")
+    issues    = data.get("issues") or data.get("Issues") or []
+    checklist = data.get("checklist") or data.get("Checklist") or []
+    color = "green" if passed else "yellow"; status = "✅ APPROVED" if passed else "⚠️ NEEDS REWORK"
     html = f"""<div class="sil-card sil-card-accent">
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
         <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{label}</span>
@@ -13184,12 +21225,8 @@ def render_contacts(contacts, title="Contacts"):
     st.markdown(f'<div class="section-label">👥 {title} ({len(contacts)})</div>', unsafe_allow_html=True)
     cols = st.columns(2)
     for i, c in enumerate(contacts):
-        col = cols[i % 2]
-        prio = c.get("priority","General")
-        email = c.get("email","")
-        li = c.get("linkedin_url","")
-        patterns = c.get("email_patterns",[])
-        src = c.get("source","")
+        col = cols[i % 2]; prio = c.get("priority","General")
+        email = c.get("email",""); li = c.get("linkedin_url",""); patterns = c.get("email_patterns",[]); src = c.get("source","")
         with col:
             html = f"""<div class="contact-card">
               <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -13203,26 +21240,30 @@ def render_contacts(contacts, title="Contacts"):
             if src:        html += f'<div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">via {src}</div>'
             st.markdown(html + '</div>', unsafe_allow_html=True)
 
+
+# ✅ FIXED render_emails — also handles 'message'/'text' keys used by LinkedIn sequences
 def render_emails(emails_data):
     if not emails_data:
-        st.info("No email data available.")
+        st.info("No data available.")
         return
     emails_data = as_dict(emails_data)
     if not emails_data: return
     variants = {}
     for k, v in emails_data.items():
         kl = k.lower().replace("_","").replace(" ","")
-        if any(x in kl for x in ["varianta","variant_a","emaila"]) or kl=="a":
-            variants["Variant A — Hiring Manager"] = v
-        elif any(x in kl for x in ["variantb","variant_b","emailb"]) or kl=="b":
-            variants["Variant B — CISO / VP Level"] = v
+        if any(x in kl for x in ["varianta","variant_a","emaila","sequencea","msga"]) or kl=="a":
+            variants["Variant A"] = v
+        elif any(x in kl for x in ["variantb","variant_b","emailb","sequenceb","msgb"]) or kl=="b":
+            variants["Variant B"] = v
         else:
             variants[k] = v
     for label, v in variants.items():
         st.markdown(f'<div class="section-label">✉️ {label}</div>', unsafe_allow_html=True)
         if isinstance(v, dict):
             subj = v.get("subject") or v.get("Subject","")
-            body = v.get("body") or v.get("Body") or v.get("content","")
+            # ✅ FIXED: also check 'message' and 'text' keys (used by LinkedIn sequences)
+            body = (v.get("body") or v.get("Body") or v.get("message")
+                    or v.get("Message") or v.get("content") or v.get("text",""))
             if subj: st.markdown(f'<div class="email-subject">Subject: {subj}</div>', unsafe_allow_html=True)
             if body: st.markdown(f'<div class="email-box">{body}</div>', unsafe_allow_html=True)
             else:    st.code(json.dumps(v, indent=2), language="json")
@@ -13231,15 +21272,11 @@ def render_emails(emails_data):
         st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
 
 def render_service_mapping(data):
-    if not data:
-        st.info("No service mapping data.")
-        return
+    if not data: st.info("No service mapping data."); return
     items = data if isinstance(data, list) else []
     if not items and isinstance(data, dict):
         for key in ("services","mappings","service_mapping","ServiceMapping","items"):
-            if isinstance(data.get(key), list):
-                items = data[key]
-                break
+            if isinstance(data.get(key), list): items = data[key]; break
         if not items: items = [data]
     fit_colors = {"STRONG FIT":"green","PARTIAL FIT":"yellow","GAP":"red"}
     for item in items:
@@ -13264,15 +21301,11 @@ def render_service_mapping(data):
     render_json_pretty(data, "Service Mapping")
 
 def render_microplans(data):
-    if not data:
-        st.info("No micro-plan data.")
-        return
+    if not data: st.info("No micro-plan data."); return
     plans = data if isinstance(data, list) else []
     if not plans and isinstance(data, dict):
         for k in ("plans","micro_plans","microplans","top_3","improvements"):
-            if isinstance(data.get(k), list):
-                plans = data[k]
-                break
+            if isinstance(data.get(k), list): plans = data[k]; break
         if not plans: plans = [data]
     for i, plan in enumerate(plans[:3], 1):
         if not isinstance(plan, dict): continue
@@ -13285,25 +21318,19 @@ def render_microplans(data):
             if obj and obj != title: st.markdown(f"**Objective:** {obj}")
             if kpis:
                 st.markdown("**KPIs:**")
-                for kpi in (kpis if isinstance(kpis, list) else [kpis]):
-                    st.markdown(f"• {kpi}")
+                for kpi in (kpis if isinstance(kpis, list) else [kpis]): st.markdown(f"• {kpi}")
             if tasks:
                 st.markdown("**Tasks:**")
                 for t in (tasks if isinstance(tasks, list) else [tasks]):
                     if isinstance(t, dict):
-                        tn = t.get("task") or t.get("name","")
-                        te = t.get("effort") or t.get("duration","")
+                        tn = t.get("task") or t.get("name",""); te = t.get("effort") or t.get("duration","")
                         st.markdown(f"• **{tn}** {f'— {te}' if te else ''}")
                     else: st.markdown(f"• {t}")
             st.code(json.dumps(plan, indent=2, default=str), language="json")
 
 def render_deal_assurance(data):
-    if not data:
-        st.info("No deal assurance data.")
-        return
-    if not isinstance(data, dict):
-        render_json_pretty(data, "Deal Assurance Pack")
-        return
+    if not data: st.info("No deal assurance data."); return
+    if not isinstance(data, dict): render_json_pretty(data, "Deal Assurance Pack"); return
     evp = data.get("executive_value_proposition") or data.get("value_proposition") or data.get("ExecutiveValueProposition","")
     if evp:
         st.markdown('<div class="section-label">💼 Executive Value Proposition</div>', unsafe_allow_html=True)
@@ -13318,15 +21345,13 @@ def render_deal_assurance(data):
     if risk:
         st.markdown('<div class="section-label" style="margin-top:1rem">🛡️ Risk Mitigation</div>', unsafe_allow_html=True)
         if isinstance(risk, dict):
-            for k, v in risk.items():
-                st.markdown(f"**{k}:** {v}")
-        else:
-            st.markdown(str(risk))
+            for k, v in risk.items(): st.markdown(f"**{k}:** {v}")
+        else: st.markdown(str(risk))
     render_json_pretty(data, "Deal Assurance Pack")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  SIDEBAR with CRON Scheduler Status
+#  SIDEBAR
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("""<div style="padding:.75rem 0 1.25rem">
@@ -13335,29 +21360,21 @@ with st.sidebar:
     </div>""", unsafe_allow_html=True)
 
     if st.button("🚪 Logout", use_container_width=True):
-        st.session_state.logged_in = False
-        st.rerun()
+        st.session_state.logged_in = False; st.rerun()
 
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
 
-    # ════════════════════════════════════════════════════════════════════════════
-    #  🕐 CRON SCHEDULER STATUS DISPLAY
-    # ════════════════════════════════════════════════════════════════════════════
     st.markdown("**🕐 Auto-Scheduler (CRON)**")
-    st.caption("Runs every 12 hours via OS scheduler · Managed by Task Scheduler / Cron job")
-
+    st.caption("Runs every 12 hours via OS scheduler")
     sched = get_scheduler_status()
-
     if sched.get("active"):
         secs = sched.get("seconds_until_next")
         if secs is not None:
-            hrs = secs // 3600
-            mins = (secs % 3600) // 60
+            hrs = secs // 3600; mins = (secs % 3600) // 60
             countdown = f"{hrs}h {mins}m" if hrs else f"{mins}m"
             next_label = f"Next: <b>{countdown}</b>"
         else:
             next_label = "Next: calculating…"
-
         last = (sched.get("last_run") or "")[:19]
         st.markdown(f"""<div class="sched-on">
           🟢 <b>Auto-Scheduler: ON</b><br>
@@ -13368,33 +21385,24 @@ with st.sidebar:
     else:
         st.markdown("""<div class="sched-paused">
           🔴 <b>Scheduler Inactive</b><br>
-          <span style="color:#64748b;font-size:.8rem">No runs yet · Check CRON / Task Scheduler setup</span>
+          <span style="color:#64748b;font-size:.8rem">No runs yet</span>
         </div>""", unsafe_allow_html=True)
 
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
 
-    # ════════════════════════════════════════════════════════════════════════════
-    #  📊 GOOGLE SHEETS SYNC
-    # ════════════════════════════════════════════════════════════════════════════
     st.markdown("**📊 Master Contacts — Google Sheet**")
-    st.caption("All contacts synced here · LinkedIn messages & outreach emails included")
+    st.caption("All contacts synced here with emails + LinkedIn ✅")
 
-    # Auto-sync on first load
     if not st.session_state.get("gsheet_auto_synced"):
         st.session_state["gsheet_auto_synced"] = True
         if Path(GCREDS_FILE).exists():
-            try:
-                _auto_jobs = load_all_jobs()
-            except Exception:
-                _auto_jobs = []
-            if _auto_jobs:
-                _auto_res = sync_contacts_to_gsheet(_auto_jobs)
-                if not _auto_res["error"]:
-                    st.session_state.gsheet_sync_error = ""
-                    st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
-                    st.session_state.gsheet_appended = _auto_res["appended"]
-                else:
-                    st.session_state.gsheet_sync_error = _auto_res["error"]
+            _auto_res = sync_contacts_to_gsheet([])
+            if not _auto_res["error"]:
+                st.session_state.gsheet_sync_error = ""
+                st.session_state.gsheet_last_sync  = datetime.now().strftime("%d %b %Y  %H:%M")
+                st.session_state.gsheet_appended   = _auto_res["appended"]
+            else:
+                st.session_state.gsheet_sync_error = _auto_res["error"]
 
     sync_col1, sync_col2 = st.columns([3, 1])
     with sync_col1:
@@ -13403,24 +21411,17 @@ with st.sidebar:
         st.markdown(f'<a href="{GSHEET_URL}" target="_blank" style="text-decoration:none"><div style="text-align:center;padding:.42rem;border:1px solid #d9e2ec;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer">↗</div></a>', unsafe_allow_html=True)
 
     if sync_clicked:
-        try:
-            jobs_for_sync = load_all_jobs()
-        except Exception:
-            jobs_for_sync = []
-        if not jobs_for_sync:
-            st.warning("No jobs in MongoDB to sync yet.")
+        with st.spinner("Syncing to Google Sheet…"):
+            res = sync_contacts_to_gsheet([])
+        if res["error"]:
+            st.session_state.gsheet_sync_error = res["error"]
+            st.session_state.gsheet_last_sync  = None
+            st.session_state.gsheet_appended   = None
         else:
-            with st.spinner("Syncing to Google Sheet…"):
-                res = sync_contacts_to_gsheet(jobs_for_sync)
-            if res["error"]:
-                st.session_state.gsheet_sync_error = res["error"]
-                st.session_state.gsheet_last_sync = None
-                st.session_state.gsheet_appended = None
-            else:
-                st.session_state.gsheet_sync_error = ""
-                st.session_state.gsheet_last_sync = datetime.now().strftime("%d %b %Y  %H:%M")
-                st.session_state.gsheet_appended = res["appended"]
-                st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
+            st.session_state.gsheet_sync_error = ""
+            st.session_state.gsheet_last_sync  = datetime.now().strftime("%d %b %Y  %H:%M")
+            st.session_state.gsheet_appended   = res["appended"]
+            st.success(f"✅ +{res['appended']} new rows · {res['skipped']} skipped")
 
     disk_state = _read_sync_state()
     last_sync  = (
@@ -13443,35 +21444,27 @@ with st.sidebar:
 
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
 
-    # ════════════════════════════════════════════════════════════════════════════
-    #  📚 JOB SELECTOR
-    # ════════════════════════════════════════════════════════════════════════════
     try:
         all_jobs = load_all_jobs()
     except Exception as e:
-        st.error(f"MongoDB error: {e}")
-        st.stop()
+        st.error(f"MongoDB error: {e}"); st.stop()
 
     if not all_jobs:
-        st.warning("No jobs in MongoDB yet. Run the pipeline first.")
-        st.stop()
+        st.warning("No jobs in MongoDB yet. Run the pipeline first."); st.stop()
 
     st.markdown(f'<div style="font-size:.75rem;color:#64748b;margin-bottom:.75rem">{len(all_jobs)} jobs in database</div>', unsafe_allow_html=True)
 
-    search = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
+    search   = st.text_input("🔍 Filter jobs", placeholder="e.g. Bounteous")
     filtered = [j for j in all_jobs if search.lower() in (j.get("company","")+" "+j.get("role","")).lower()]
 
     def job_label(j):
-        score = j.get("opp_score")
-        s = f" [{score}/10]" if score else ""
-        ok = "✅" if j.get("pipeline_ok") else "❌"
+        score = j.get("opp_score"); s = f" [{score}/10]" if score else ""; ok = "✅" if j.get("pipeline_ok") else "❌"
         return f"{ok} {j.get('company','?')} — {j.get('role','?')[:32]}{s}"
 
     if not filtered:
-        st.warning("No matching jobs.")
-        st.stop()
+        st.warning("No matching jobs."); st.stop()
 
-    sel_label = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
+    sel_label   = st.selectbox("Select a Job", [job_label(j) for j in filtered], index=0)
     selected_id = str(filtered[[job_label(j) for j in filtered].index(sel_label)]["_id"])
 
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
@@ -13484,30 +21477,21 @@ with st.sidebar:
 
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
     if st.button("🔄 Refresh Data", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+        st.cache_data.clear(); st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  MAIN CONTENT — Job Details
+#  MAIN CONTENT
 # ══════════════════════════════════════════════════════════════════════════════
-
 with st.spinner("Loading job…"):
     job = load_job(selected_id)
 
 if not job:
-    st.error("Could not load job document.")
-    st.stop()
+    st.error("Could not load job document."); st.stop()
 
-company   = job.get("company","Unknown")
-role  = job.get("role","Unknown")
-opp_score = job.get("opp_score")
-p_ok  = job.get("pipeline_ok",False)
-p_min     = job.get("pipeline_min","?")
-c_found = job.get("contacts_found",0)
-c_cov     = job.get("coverage_score")
-c_domain = job.get("contact_domain","")
-run_at    = job.get("run_at","")
+company   = job.get("company","Unknown"); role = job.get("role","Unknown")
+opp_score = job.get("opp_score"); p_ok = job.get("pipeline_ok",False); p_min = job.get("pipeline_min","?")
+c_found   = job.get("contacts_found",0); c_cov = job.get("coverage_score"); c_domain = job.get("contact_domain",""); run_at = job.get("run_at","")
 
 st.markdown(f"""<div style="margin-bottom:1.75rem">
   <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:#2563eb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem">
@@ -13572,9 +21556,7 @@ with tabs[2]:
     fg = as_dict(job.get("agent_fit_gap") or {})
     if opp_score:
         try:
-            sn=float(str(opp_score).split("/")[0])
-            bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"
-            bp=int(sn/10*100)
+            sn=float(str(opp_score).split("/")[0]); bc="#16a34a" if sn>=7 else "#f59e0b" if sn>=5 else "#dc2626"; bp=int(sn/10*100)
             st.markdown(f"""<div style="margin-bottom:1.5rem">
               <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
                 <span style="font-family:'Syne',sans-serif;font-weight:700">Opportunity Score</span>
@@ -13607,8 +21589,7 @@ with tabs[2]:
         for col,(fl,items) in zip([c1,c2,c3],buckets.items()):
             col.markdown(f'<div style="font-family:Syne,sans-serif;font-weight:700;color:{cm[fl]};margin-bottom:.5rem">{fl} ({len(items)})</div>', unsafe_allow_html=True)
             for s in items:
-                svc=s.get("service") or s.get("Service") or s.get("name","")
-                just=s.get("justification") or s.get("reason","")
+                svc=s.get("service") or s.get("Service") or s.get("name",""); just=s.get("justification") or s.get("reason","")
                 col.markdown(f'<div style="background:{bgm[fl]};border:1px solid {bdm[fl]};border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.85rem"><div style="font-weight:600">{svc}</div><div style="color:#64748b;font-size:.78rem;margin-top:.2rem">{safe_str(just,150)}</div></div>', unsafe_allow_html=True)
     elif fg: st.json(fg)
     else: st.info("No fit/gap data.")
@@ -13618,8 +21599,7 @@ with tabs[3]:
     c1, c2 = st.columns(2)
     with c1:
         st.markdown('<div class="section-label">🔧 Capability Improvements</div>', unsafe_allow_html=True)
-        cap = job.get("agent_capability") or {}
-        items_cap = cap if isinstance(cap,list) else []
+        cap = job.get("agent_capability") or {}; items_cap = cap if isinstance(cap,list) else []
         if not items_cap and isinstance(cap,dict):
             for k in ("improvements","recommendations","capabilities","items"):
                 v=cap.get(k)
@@ -13629,8 +21609,7 @@ with tabs[3]:
             if not isinstance(item,dict): continue
             title=item.get("title") or item.get("gap") or item.get("service","")
             rec=item.get("recommendation") or item.get("steps","")
-            effort=item.get("build_effort") or item.get("effort","")
-            demand=item.get("market_demand") or item.get("priority","")
+            effort=item.get("build_effort") or item.get("effort",""); demand=item.get("market_demand") or item.get("priority","")
             st.markdown(f"""<div class="sil-card" style="margin-bottom:.6rem">
               <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">{title}</div>
               <div style="font-size:.82rem;color:var(--muted)">{safe_str(rec,250)}</div>
@@ -13644,9 +21623,13 @@ with tabs[3]:
 with tabs[4]:
     render_deal_assurance(job.get("agent_deal_assurance"))
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  ✅ TAB 5 — OUTREACH EMAILS + LINKEDIN SEQUENCES (FULLY FIXED)
+# ══════════════════════════════════════════════════════════════════════════════
 with tabs[5]:
+    # ── Outreach Emails ──────────────────────────────────────────────────────
     st.markdown('<div class="section-label">✉️ Outreach Email Variants</div>', unsafe_allow_html=True)
-    emails_src = job.get("agent_outreach_emails") or job.get("outreach_emails") or {}
+    emails_src = job.get("agent_outreach_emails") or {}
     oq = as_dict(job.get("agent_outreach_qa") or {})
     improved = (oq.get("improved_emails") or oq.get("ImprovedEmails")) if oq else None
     if improved:
@@ -13657,13 +21640,29 @@ with tabs[5]:
     else:
         render_emails(emails_src)
 
+    # ── LinkedIn Sequences ───────────────────────────────────────────────────
+    st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">🔗 LinkedIn Message Sequences</div>', unsafe_allow_html=True)
+    # ✅ FIXED: real structure is agent_linkedin_sequences → { linkedin_sequences: {variants}, meta: {} }
+    _li_outer = job.get("agent_linkedin_sequences") or {}
+    if _li_outer:
+        # Case 1 (most jobs): drill into nested linkedin_sequences key
+        li_src = _li_outer.get("linkedin_sequences") or {}
+        # Case 2 (Fuji Electric etc): raw_text string
+        _raw = _li_outer.get("raw_text")
+        if not li_src and _raw:
+            st.markdown(f'<div class="email-box">{_raw}</div>', unsafe_allow_html=True)
+        elif li_src:
+            render_emails(li_src)
+        else:
+            render_emails(_li_outer)  # Case 3: outer itself has variants
+    else:
+        st.info("No LinkedIn sequence data available.")
+
 with tabs[6]:
-    contacts = job.get("contacts") or []
-    contact_sources = job.get("contact_sources") or []
-    pri=[c for c in contacts if c.get("priority")=="Primary"]
-    sec=[c for c in contacts if c.get("priority")=="Secondary"]
-    ter=[c for c in contacts if c.get("priority")=="Tertiary"]
-    gen=[c for c in contacts if c.get("priority")=="General"]
+    contacts = job.get("contacts") or []; contact_sources = job.get("contact_sources") or []
+    pri=[c for c in contacts if c.get("priority")=="Primary"]; sec=[c for c in contacts if c.get("priority")=="Secondary"]
+    ter=[c for c in contacts if c.get("priority")=="Tertiary"]; gen=[c for c in contacts if c.get("priority")=="General"]
     st.markdown(f"""<div class="metric-row" style="margin-bottom:1.5rem">
       <div class="metric-tile"><div class="val" style="color:#dc2626">{len(pri)}</div><div class="lbl">Primary</div></div>
       <div class="metric-tile"><div class="val" style="color:#f59e0b">{len(sec)}</div><div class="lbl">Secondary</div></div>
@@ -13671,17 +21670,15 @@ with tabs[6]:
       <div class="metric-tile"><div class="val" style="color:#94a3b8">{len(gen)}</div><div class="lbl">General</div></div>
     </div>""", unsafe_allow_html=True)
     if contact_sources:
-        st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True)
-        st.markdown("")
+        st.markdown('Sources: '+" ".join(badge(s,"blue") for s in contact_sources), unsafe_allow_html=True); st.markdown("")
     missing = job.get("missing_roles") or []
     if missing:
-        st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True)
-        st.markdown("")
+        st.markdown('⚠️ Missing roles: '+" ".join(badge(r,"red") for r in missing), unsafe_allow_html=True); st.markdown("")
     if contacts:
         excel_bytes = build_contacts_excel(contacts, company, role)
         if excel_bytes:
             safe_co = re.sub(r'[^a-z0-9]','_',company.lower())[:20]
-            fname = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+            fname   = f"contacts_{safe_co}_{datetime.now().strftime('%Y%m%d')}.xlsx"
             btn_col, _ = st.columns([1,3])
             with btn_col:
                 st.download_button("📥  Download Contacts (.xlsx)", data=excel_bytes, file_name=fname,
@@ -13695,12 +21692,9 @@ with tabs[6]:
             with st.expander("🤖 CrewAI Agent's Contact Search"):
                 if isinstance(agent_contacts,dict):
                     ac_list=agent_contacts.get("contacts") or []
-                    if ac_list:
-                        render_contacts(ac_list,"Agent Contacts")
-                    else:
-                        st.json(agent_contacts)
-                else:
-                    st.json(agent_contacts)
+                    if ac_list: render_contacts(ac_list,"Agent Contacts")
+                    else:       st.json(agent_contacts)
+                else: st.json(agent_contacts)
     else:
         st.info("No contacts found for this job.")
 
@@ -13708,26 +21702,17 @@ with tabs[7]:
     st.markdown('<div class="section-label" style="margin-bottom:1rem">🔍 All 4 QA Gate Results</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     for i,(lbl,key) in enumerate([("Research QA","agent_research_qa"),("Service Mapping QA","agent_mapping_qa"),("Deal Assurance QA","agent_assurance_qa"),("Outreach Email QA","agent_outreach_qa")]):
-        with (c1 if i%2==0 else c2):
-            render_qa_block(job.get(key), lbl)
+        with (c1 if i%2==0 else c2): render_qa_block(job.get(key), lbl)
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="section-label">🎯 Prospect Enforcer Result</div>', unsafe_allow_html=True)
     enf = as_dict(job.get("agent_prospect_enforcer") or {})
     if enf:
-        cov=enf.get("coverage_score","?")
-        miss=enf.get("missing_roles",[])
-        note=enf.get("note","")
-        ec=enf.get("contacts",[])
+        cov=enf.get("coverage_score","?"); miss=enf.get("missing_roles",[]); note=enf.get("note",""); ec=enf.get("contacts",[])
         x1,x2,x3=st.columns(3)
-        x1.metric("Coverage Score",f"{cov}%")
-        x2.metric("Missing Roles",len(miss))
-        x3.metric("Contacts Verified",len(ec))
-        if miss:
-            st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
-        if note:
-            st.caption(note)
-    else:
-        st.info("No enforcer data.")
+        x1.metric("Coverage Score",f"{cov}%"); x2.metric("Missing Roles",len(miss)); x3.metric("Contacts Verified",len(ec))
+        if miss: st.markdown(f"**Missing:** {', '.join(str(m) for m in miss)}")
+        if note: st.caption(note)
+    else: st.info("No enforcer data.")
 
 with tabs[8]:
     st.markdown('<div class="section-label">🗄️ Raw MongoDB Document</div>', unsafe_allow_html=True)
@@ -13736,16 +21721,14 @@ with tabs[8]:
         if k=="_id": continue
         rows.append({"Field":k,"Type":type(v).__name__,"Len":len(v) if isinstance(v,(list,dict)) else len(str(v)) if v else 0})
     hc1,hc2,hc3=st.columns([3,1,1])
-    hc1.markdown("**Field**")
-    hc2.markdown("**Type**")
-    hc3.markdown("**Len**")
+    hc1.markdown("**Field**"); hc2.markdown("**Type**"); hc3.markdown("**Len**")
     for r in rows:
         rc1,rc2,rc3=st.columns([3,1,1])
         rc1.code(r["Field"],language=None)
         rc2.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Type"]}</span>', unsafe_allow_html=True)
         rc3.markdown(f'<span style="color:#64748b;font-size:.8rem">{r["Len"]}</span>', unsafe_allow_html=True)
     st.markdown('<div class="sil-divider"></div>', unsafe_allow_html=True)
-    for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
+    for lbl,key in [("Job Research","agent_job_research"),("Enrichment","agent_enrichment"),("Service Mapping","agent_service_mapping"),("Fit/Gap","agent_fit_gap"),("Capability","agent_capability"),("Micro-Plans","agent_microplans"),("Deal Assurance","agent_deal_assurance"),("Outreach Emails","agent_outreach_emails"),("LinkedIn Sequences","agent_linkedin_sequences"),("Prospect Contacts","agent_prospect_contacts"),("Prospect Enforcer","agent_prospect_enforcer"),("Research QA","agent_research_qa"),("Mapping QA","agent_mapping_qa"),("Assurance QA","agent_assurance_qa"),("Outreach QA","agent_outreach_qa"),("Contacts (5-source)","contacts")]:
         data=job.get(key)
         if data:
             with st.expander(f"📄 {lbl}"):

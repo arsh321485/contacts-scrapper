@@ -1,8 +1,8 @@
 {
   "metadata": {
     "description": "Cybersecurity REMOTE/ONLINE jobs — Global, 90+ keyword search",
-    "total_jobs": 7,
-    "scraped_at": "2026-03-10T20:05:01.232585",
+    "total_jobs": 8,
+    "scraped_at": "2026-03-16T19:31:56.198190",
     "platforms": [
       "Arbeitnow",
       "RemoteOK",
@@ -13,7 +13,59 @@
   },
   "jobs": [
     {
-      "id": "remoteok_1773153079_8542",
+      "id": "remoteok_1773669481_7966",
+      "source": "RemoteOK",
+      "job_title": "Cloud Security Architect",
+      "company": "Altium",
+      "location": "La Jolla",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "â¡ï¸ Why Altium? Altium is transforming the way electronics are designed and built. From startups to worldâs technology giants, our digital platforms give more power to PCB designers, supply chain, and manufacturing, letting them collaborate as never before. Constant innovation has created a transformative technology, unique in its space More than 30,000 companies and 100,000 electronics engineers worldwide use Altium We are growing, debt-free, and financially strong, with the resources to become #1 in the EDA industry About the role: This role is responsible for making our software secure",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-cloud-security-architect-altium-1130757",
+      "matched_keywords": [
+        "Security Architect",
+        "Cloud Security Architect"
+      ],
+      "keyword_used": "RemoteOK API",
+      "scraped_at": "2026-03-16T19:28:01.919583",
+      "tags": [
+        "security",
+        "architect",
+        "design",
+        "saas",
+        "system",
+        "software",
+        "cloud",
+        "pcb",
+        "engineering",
+        "digital nomad"
+      ],
+      "posted_date": "2026-03-13T08:00:11+00:00"
+    },
+    {
+      "id": "remoteok_1773669482_6044",
+      "source": "RemoteOK",
+      "job_title": "Staff Threat Intelligence Researcher",
+      "company": "Lookout Inc",
+      "location": "France",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "Lookout, Inc. is the endpoint to cloud security company purpose-built for the intersection of enterprise and personal data. We safeguard data across devices, apps, networks and clouds through our unified, cloud-native security platform â a solution that's as fluid and flexible as the modern digital world. By giving organizations and individuals greater control over their data, we enable them to unleash its value and thrive. Lookout is trusted by enterprises of all sizes, government agencies and millions of consumers to protect sensitive data, enabling them to live, work and connect â freel",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-staff-threat-intelligence-researcher-lookout-inc-1130722",
+      "matched_keywords": [],
+      "keyword_used": "RemoteOK API",
+      "scraped_at": "2026-03-16T19:28:02.117292",
+      "tags": [
+        "ios",
+        "security",
+        "cloud",
+        "mobile",
+        "android"
+      ],
+      "posted_date": "2026-03-11T00:00:26+00:00"
+    },
+    {
+      "id": "remoteok_1773669482_3638",
       "source": "RemoteOK",
       "job_title": "Security Engineer",
       "company": "Exodus Movement Inc.",
@@ -26,7 +78,7 @@
         "Security Engineer"
       ],
       "keyword_used": "RemoteOK API",
-      "scraped_at": "2026-03-10T20:01:19.789820",
+      "scraped_at": "2026-03-16T19:28:02.170004",
       "tags": [
         "security",
         "design",
@@ -38,113 +90,82 @@
       "posted_date": "2026-03-09T08:00:05+00:00"
     },
     {
-      "id": "remoteok_1773153080_6801",
-      "source": "RemoteOK",
-      "job_title": "Senior Security Engineer",
-      "company": "Nansen.ai",
-      "location": "Remote/Global",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "Nansen surfaces the signal and creates winners in the future of finance. We're building a new way to trade: agentic, onchain, and fully integrated. From analytics to execution, we're the platform where investors find alpha and act on it. The Opportunity As we scale our product, staking operations, and AI-powered capabilities, security matters more than ever. We're hiring a Senior Security Engineer to strengthen our security posture across the entire engineering organisation. You'll work closely with the Head of Security and collaborate hands-on with engineering teams across the company to ensu",
-      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-senior-security-engineer-nansen-ai-1130555",
-      "matched_keywords": [
-        "Security Engineer"
-      ],
-      "keyword_used": "RemoteOK API",
-      "scraped_at": "2026-03-10T20:01:20.046138",
-      "tags": [
-        "security",
-        "design",
-        "support",
-        "developer",
-        "code",
-        "cloud",
-        "api",
-        "management",
-        "senior",
-        "analytics",
-        "engineer",
-        "engineering",
-        "digital nomad"
-      ],
-      "posted_date": "2026-02-26T12:00:06+00:00"
-    },
-    {
-      "id": "arbeitnow_1773153084_9845",
+      "id": "arbeitnow_1773669489_9448",
       "source": "Arbeitnow",
-      "job_title": "Information Security Officer",
-      "company": "ICBC Frankfurt Branch",
-      "location": "Frankfurt am Main",
+      "job_title": "Senior SoftwareentwicklerIn & Team-Lead (Go/Node.js/K8s) in der Cybersecurity (m/w/d)",
+      "company": "L3montree",
+      "location": "Bonn",
       "job_type": "Remote / Online",
       "salary": "Not listed",
-      "job_description_snippet": "Industrial and Commercial Bank of China (ICBC) Frankfurt Branch was established in June 1999, which holds the universal bank license of Germany and is a correspondent bank for first class clearing of Euro and a member of the Target2 and SEPA of the Euro Clearing System. ICBC Frankfurt Branch is also the Euro Clearing Center of ICBC Group. ICBC Frankfurt Branch’s Legal and Compliance Department is currently looking for: Information Security Officer (m/w/d) Full-time Location: Frankfurt am Main, G",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/icbc-frankfurt-branch/information-security-officer-frankfurt-am-main-150391",
+      "job_description_snippet": "Gestalte mit uns sichere digitale Souveränität! Du hast Lust auf Arbeit mit gesellschaftlichem Mehrwert und auf spannende Softwareprojekte? Dann kannst Du bei uns digitale Souveränität sicher mitgestalten! Wir sind ein junges, wachsendes Unternehmen aus Bonn und haben uns den Themen Softwaresicherheit und der Verbesserung der digitalen Souveränität Deutschlands verschrieben. Einen besonderen Fokus legen wir dabei auf Open-Source-Technologien. Dabei ist es uns wichtig, dass unsere Projekte mit mo",
+      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/l3montree/senior-softwareentwicklerin-team-lead-go-nodejs-k8s-in-der-cybersecurity-bonn-326222",
       "matched_keywords": [],
       "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-10T20:01:24.425073",
+      "scraped_at": "2026-03-16T19:28:09.305206",
       "tags": [
-        "IT Security"
+        "Software Development"
       ],
-      "posted_date": 1773140503
+      "posted_date": 1773473343
     },
     {
-      "id": "arbeitnow_1773153084_2675",
+      "id": "arbeitnow_1773669513_7494",
       "source": "Arbeitnow",
-      "job_title": "Security Operations Engineer",
-      "company": "TripleTen",
-      "location": "Berlin",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "*TripleTen is a service that empowers individuals, regardless of their prior experience, to embark on the exciting and challenging journey of mastering IT professions such as software engineering, data science, business intelligence analytics, and QA engineering in a feasible and accessible way, ultimately leading to employment opportunities.*Our mission is to ensure that every student has the opportunity to master a new profession successfully and become a valuable member of the IT industry. We",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/tripleten/remote-security-operations-engineer-berlin-88711",
-      "matched_keywords": [],
-      "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-10T20:01:24.566737",
-      "tags": [
-        "Remote"
-      ],
-      "posted_date": 1773114133
-    },
-    {
-      "id": "arbeitnow_1773153088_3547",
-      "source": "Arbeitnow",
-      "job_title": "Senior / Management Consultant Information Security (m/w/d)",
-      "company": "carmasec GmbH & Co. KG",
+      "job_title": "IT-Administrator / Security Specialist (m/w/d)",
+      "company": "Intercon Solutions GmbH",
       "location": "Cologne",
       "job_type": "Remote / Online",
       "salary": "Not listed",
-      "job_description_snippet": "Wir sind ein Team von Cyber Security Expert:innen und setzen uns leidenschaftlich für den Schutz digitaler Infrastrukturen ein. Mit einer Kombination aus langjähriger Beratungserfahrung, agilen Arbeitsweisen und kontinuierlicher Weiterentwicklung unterstützen wir unsere Kunden branchenneutral und herstellerunabhängig. Dabei bieten wir interdisziplinäre Kompetenz aus einer Hand. Wir leben kollegiale Unterstützung im Team und eine respektvolle Feedback- und Fehlerkultur. Bei kniffligen Aufgaben fi",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/carmasec-gmbh-co-kg/senior-management-consultant-information-security-cologne-420035",
+      "job_description_snippet": "Hallo! Bist du jung, motiviert und total neugierig auf die Welt der hochmodernen MRT-Diagnostik? In unserem kleinen, dynamischen Team erwarten dich spannende Herausforderungen. Wir sind Spezialisten für innovative MRT-Systeme und bieten europaweiten Support – perfekt, um richtig Gas zu geben und dich beruflich weiterzuentwickeln! Aufgaben Du reist zu Kliniken und Praxen, um unsere High-Tech-Geräte sicher und zuverlässig zum Laufen zu bringen (Elektrokenntnisse vorteilhaft, aber nicht zwingend):",
+      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/intercon-solutions-gmbh/it-administrator-security-specialist-cologne-435566",
       "matched_keywords": [],
       "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-10T20:01:28.544823",
-      "tags": [
-        "IT Security"
-      ],
-      "posted_date": 1773066750
-    },
-    {
-      "id": "arbeitnow_1773153101_9887",
-      "source": "Arbeitnow",
-      "job_title": "Werkstudent Cyber Security (m/w/d)",
-      "company": "Jamorie Consulting GmbH",
-      "location": "Frankfurt am Main",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "Du möchtest Cyber Security nicht nur aus dem Skript kennen, sondern in echten Projekten erleben? Du hast Lust, Verantwortung zu übernehmen, Dinge auszuprobieren und dabei schnell zu lernen? Dann bist du bei uns genau richtig! Bei JAMORIE suchen wir motivierte Studierende, die mit uns neue Wege gehen und unser junges Unternehmen aktiv mitgestalten wollen. Aufgaben Als Werkstudent:in bei JAMORIE unterstützt du unser Consulting-Team bei Kundenprojekten und internen Themen rund um Informationssicher",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/jamorie-consulting-gmbh/werkstudent-cyber-security-frankfurt-am-main-454913",
-      "matched_keywords": [],
-      "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-10T20:01:41.740408",
+      "scraped_at": "2026-03-16T19:28:33.224182",
       "tags": [
         "Remote",
+        "IT"
+      ],
+      "posted_date": 1773241262
+    },
+    {
+      "id": "arbeitnow_1773669513_3882",
+      "source": "Arbeitnow",
+      "job_title": "Außendienst IT-Administrator / Security Specialist (m/w/d)",
+      "company": "Intercon Solutions GmbH",
+      "location": "Cologne",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "Hallo! Bist du jung, motiviert und total neugierig auf die Welt der hochmodernen MRT-Diagnostik? In unserem kleinen, dynamischen Team erwarten dich spannende Herausforderungen. Wir sind Spezialisten für innovative MRT-Systeme und bieten europaweiten Support – perfekt, um richtig Gas zu geben und dich beruflich weiterzuentwickeln! Aufgaben Du reist zu Kliniken und Praxen, um unsere High-Tech-Geräte sicher und zuverlässig zum Laufen zu bringen (Elektrokenntnisse vorteilhaft, aber nicht zwingend):",
+      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/intercon-solutions-gmbh/aussendienst-it-administrator-security-specialist-cologne-14123",
+      "matched_keywords": [],
+      "keyword_used": "Arbeitnow API",
+      "scraped_at": "2026-03-16T19:28:33.226178",
+      "tags": [
+        "Remote",
+        "IT"
+      ],
+      "posted_date": 1773241261
+    },
+    {
+      "id": "arbeitnow_1773669513_6237",
+      "source": "Arbeitnow",
+      "job_title": "Consultant Industrial Cybersecurity (m/w/d)",
+      "company": "CodeWrights GmbH",
+      "location": "Karlsruhe",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "Wir sind ein Software Beratungs- und Entwicklungsunternehmen — aber vor allem sind wir ein Partner, auf den sich unsere Kunden verlassen können. Mit unserem Team in Karlsruhe haben wir über die Jahre etwas aufgebaut, das weit über reine Software Entwicklung hinausgeht. Wir beraten unsere Kunden, wenn neue Technologien, neue Standards oder neue regulatorische Anforderungen auf sie zukommen. Wir helfen ihnen, die richtigen Entscheidungen zu treffen – und setzen diese Entscheidungen anschließend ge",
+      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/codewrights-gmbh/consultant-industrial-cybersecurity-karlsruhe-473185",
+      "matched_keywords": [],
+      "keyword_used": "Arbeitnow API",
+      "scraped_at": "2026-03-16T19:28:33.347353",
+      "tags": [
         "Consulting",
         "Engineering"
       ],
-      "posted_date": 1772809279
+      "posted_date": 1773230458
     },
     {
-      "id": "remotive_1773153293_7910",
+      "id": "remotive_1773669697_4532",
       "source": "Remotive",
       "job_title": "Red Team Specialist (Offensive Security)",
       "company": "Lumitekno Kreasi Global",
@@ -157,7 +178,7 @@
         "Red Team"
       ],
       "keyword_used": "Remotive: devops-sysadmin",
-      "scraped_at": "2026-03-10T20:04:53.894908",
+      "scraped_at": "2026-03-16T19:31:37.489995",
       "tags": [
         "security",
         "SOLID",
