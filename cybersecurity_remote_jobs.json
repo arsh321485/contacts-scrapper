@@ -1,192 +1,187 @@
 {
   "metadata": {
     "description": "Cybersecurity REMOTE/ONLINE jobs — Global, 90+ keyword search",
-    "total_jobs": 8,
-    "scraped_at": "2026-03-16T19:31:56.198190",
+    "total_jobs": 6,
+    "scraped_at": "2026-03-27T11:50:46.360264",
     "platforms": [
       "Arbeitnow",
-      "RemoteOK",
-      "Remotive"
+      "RemoteOK"
     ],
     "total_keywords": 83,
     "filter_version": "v5.1 strict title-based + per-platform timeout"
   },
   "jobs": [
     {
-      "id": "remoteok_1773669481_7966",
+      "id": "remoteok_1774592260_4724",
       "source": "RemoteOK",
-      "job_title": "Cloud Security Architect",
-      "company": "Altium",
-      "location": "La Jolla",
+      "job_title": "Lead Security Engineer",
+      "company": "Copia Automation",
+      "location": "New York City",
       "job_type": "Remote / Online",
       "salary": "Not listed",
-      "job_description_snippet": "â¡ï¸ Why Altium? Altium is transforming the way electronics are designed and built. From startups to worldâs technology giants, our digital platforms give more power to PCB designers, supply chain, and manufacturing, letting them collaborate as never before. Constant innovation has created a transformative technology, unique in its space More than 30,000 companies and 100,000 electronics engineers worldwide use Altium We are growing, debt-free, and financially strong, with the resources to become #1 in the EDA industry About the role: This role is responsible for making our software secure",
-      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-cloud-security-architect-altium-1130757",
-      "matched_keywords": [
-        "Security Architect",
-        "Cloud Security Architect"
-      ],
-      "keyword_used": "RemoteOK API",
-      "scraped_at": "2026-03-16T19:28:01.919583",
-      "tags": [
-        "security",
-        "architect",
-        "design",
-        "saas",
-        "system",
-        "software",
-        "cloud",
-        "pcb",
-        "engineering",
-        "digital nomad"
-      ],
-      "posted_date": "2026-03-13T08:00:11+00:00"
-    },
-    {
-      "id": "remoteok_1773669482_6044",
-      "source": "RemoteOK",
-      "job_title": "Staff Threat Intelligence Researcher",
-      "company": "Lookout Inc",
-      "location": "France",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "Lookout, Inc. is the endpoint to cloud security company purpose-built for the intersection of enterprise and personal data. We safeguard data across devices, apps, networks and clouds through our unified, cloud-native security platform â a solution that's as fluid and flexible as the modern digital world. By giving organizations and individuals greater control over their data, we enable them to unleash its value and thrive. Lookout is trusted by enterprises of all sizes, government agencies and millions of consumers to protect sensitive data, enabling them to live, work and connect â freel",
-      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-staff-threat-intelligence-researcher-lookout-inc-1130722",
-      "matched_keywords": [],
-      "keyword_used": "RemoteOK API",
-      "scraped_at": "2026-03-16T19:28:02.117292",
-      "tags": [
-        "ios",
-        "security",
-        "cloud",
-        "mobile",
-        "android"
-      ],
-      "posted_date": "2026-03-11T00:00:26+00:00"
-    },
-    {
-      "id": "remoteok_1773669482_3638",
-      "source": "RemoteOK",
-      "job_title": "Security Engineer",
-      "company": "Exodus Movement Inc.",
-      "location": "Remote/Global",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "As a Security Engineer at Exodus, you will play a critical role in strengthening the security and resilience of our platform by engineering scalable defensive systems across enterprise and production environments, with detection and response as core capabilities. This role goes beyond traditional monitoring, you will design and implement scalable automation that empowers our Cyber Defense team to detect, triage, and respond to threats more effectively. By leveraging both AI-assisted and traditional solutions, you will drive measurable improvements to our security operations, enhance incident r",
-      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-security-engineer-exodus-movement-inc-1130686",
+      "job_description_snippet": "Copia Automation brings modern developer tools and resiliency to industrial automation. Our product provides Git-based source control for automation professionals as well as remote, real-time monitoring of the entire plant floor + state of the art backup and recover technology. We are a well-funded startup and with a growing list of happy customers throughout the industrial space. As a Copia employee, youâll solve challenging, unique, and meaningful problems alongside passionate coworkers, while we change the way everything gets built. Weâre seeking a Senior Security Engineer to strengthen",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-lead-security-engineer-copia-automation-1130876",
       "matched_keywords": [
         "Security Engineer"
       ],
       "keyword_used": "RemoteOK API",
-      "scraped_at": "2026-03-16T19:28:02.170004",
+      "scraped_at": "2026-03-27T11:47:40.182517",
       "tags": [
         "security",
         "design",
+        "saas",
+        "support",
+        "developer",
+        "cloud",
         "api",
+        "management",
+        "lead",
+        "senior",
+        "operations",
+        "operational",
+        "healthcare",
+        "engineer",
+        "engineering",
+        "linux",
+        "executive",
+        "digital nomad"
+      ],
+      "posted_date": "2026-03-25T16:00:04+00:00"
+    },
+    {
+      "id": "remoteok_1774592260_7752",
+      "source": "RemoteOK",
+      "job_title": "Security Engineer II Canada",
+      "company": "NerdWallet",
+      "location": "Remote/Global",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "At NerdWallet, weâre on a mission to bring clarity to all of lifeâs financial decisions and every great mission needs a team of exceptional Nerds. Weâve built an inclusive, flexible, and candid culture where youâre empowered to grow, take smart risks, and be unapologetically yourself (cape optional). Whether remote or in-office, we support how you thrive best. We invest in your well-being, development, and ability to make an impact because when one Nerd levels up, we all do.We are seeking a Security Engineer II to join our Application Security team. The Application Security team enable",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-security-engineer-ii-canada-nerdwallet-1130860",
+      "matched_keywords": [
+        "Security Engineer"
+      ],
+      "keyword_used": "RemoteOK API",
+      "scraped_at": "2026-03-27T11:47:40.225506",
+      "tags": [
+        "security",
+        "design",
+        "python",
+        "support",
+        "developer",
+        "software",
+        "test",
+        "web",
+        "javascript",
+        "financial",
+        "cloud",
+        "operational",
+        "healthcare",
         "engineer",
         "engineering",
         "digital nomad"
       ],
-      "posted_date": "2026-03-09T08:00:05+00:00"
+      "posted_date": "2026-03-22T08:00:02+00:00"
     },
     {
-      "id": "arbeitnow_1773669489_9448",
-      "source": "Arbeitnow",
-      "job_title": "Senior SoftwareentwicklerIn & Team-Lead (Go/Node.js/K8s) in der Cybersecurity (m/w/d)",
-      "company": "L3montree",
-      "location": "Bonn",
+      "id": "remoteok_1774592260_7021",
+      "source": "RemoteOK",
+      "job_title": "Senior Staff Engineer Product Security",
+      "company": "Faire",
+      "location": "San Francisco, CA",
       "job_type": "Remote / Online",
       "salary": "Not listed",
-      "job_description_snippet": "Gestalte mit uns sichere digitale Souveränität! Du hast Lust auf Arbeit mit gesellschaftlichem Mehrwert und auf spannende Softwareprojekte? Dann kannst Du bei uns digitale Souveränität sicher mitgestalten! Wir sind ein junges, wachsendes Unternehmen aus Bonn und haben uns den Themen Softwaresicherheit und der Verbesserung der digitalen Souveränität Deutschlands verschrieben. Einen besonderen Fokus legen wir dabei auf Open-Source-Technologien. Dabei ist es uns wichtig, dass unsere Projekte mit mo",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/l3montree/senior-softwareentwicklerin-team-lead-go-nodejs-k8s-in-der-cybersecurity-bonn-326222",
+      "job_description_snippet": "About Faire Faire is an online wholesale marketplace built on the belief that the future is local â independent retailers around the globe are doing more revenue than Walmart and Amazon combined, but individually, they are small compared to these massive entities. At Faire, we're using the power of tech, data, and machine learning to connect this thriving community of entrepreneurs across the globe. Picture your favorite boutique in town â we help them discover the best products from around the world to sell in their stores. With the right tools and insights, we believe that we can level t",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-senior-staff-engineer-product-security-faire-1130828",
       "matched_keywords": [],
-      "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-16T19:28:09.305206",
-      "tags": [
-        "Software Development"
-      ],
-      "posted_date": 1773473343
-    },
-    {
-      "id": "arbeitnow_1773669513_7494",
-      "source": "Arbeitnow",
-      "job_title": "IT-Administrator / Security Specialist (m/w/d)",
-      "company": "Intercon Solutions GmbH",
-      "location": "Cologne",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "Hallo! Bist du jung, motiviert und total neugierig auf die Welt der hochmodernen MRT-Diagnostik? In unserem kleinen, dynamischen Team erwarten dich spannende Herausforderungen. Wir sind Spezialisten für innovative MRT-Systeme und bieten europaweiten Support – perfekt, um richtig Gas zu geben und dich beruflich weiterzuentwickeln! Aufgaben Du reist zu Kliniken und Praxen, um unsere High-Tech-Geräte sicher und zuverlässig zum Laufen zu bringen (Elektrokenntnisse vorteilhaft, aber nicht zwingend):",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/intercon-solutions-gmbh/it-administrator-security-specialist-cologne-435566",
-      "matched_keywords": [],
-      "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-16T19:28:33.224182",
-      "tags": [
-        "Remote",
-        "IT"
-      ],
-      "posted_date": 1773241262
-    },
-    {
-      "id": "arbeitnow_1773669513_3882",
-      "source": "Arbeitnow",
-      "job_title": "Außendienst IT-Administrator / Security Specialist (m/w/d)",
-      "company": "Intercon Solutions GmbH",
-      "location": "Cologne",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "Hallo! Bist du jung, motiviert und total neugierig auf die Welt der hochmodernen MRT-Diagnostik? In unserem kleinen, dynamischen Team erwarten dich spannende Herausforderungen. Wir sind Spezialisten für innovative MRT-Systeme und bieten europaweiten Support – perfekt, um richtig Gas zu geben und dich beruflich weiterzuentwickeln! Aufgaben Du reist zu Kliniken und Praxen, um unsere High-Tech-Geräte sicher und zuverlässig zum Laufen zu bringen (Elektrokenntnisse vorteilhaft, aber nicht zwingend):",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/intercon-solutions-gmbh/aussendienst-it-administrator-security-specialist-cologne-14123",
-      "matched_keywords": [],
-      "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-16T19:28:33.226178",
-      "tags": [
-        "Remote",
-        "IT"
-      ],
-      "posted_date": 1773241261
-    },
-    {
-      "id": "arbeitnow_1773669513_6237",
-      "source": "Arbeitnow",
-      "job_title": "Consultant Industrial Cybersecurity (m/w/d)",
-      "company": "CodeWrights GmbH",
-      "location": "Karlsruhe",
-      "job_type": "Remote / Online",
-      "salary": "Not listed",
-      "job_description_snippet": "Wir sind ein Software Beratungs- und Entwicklungsunternehmen — aber vor allem sind wir ein Partner, auf den sich unsere Kunden verlassen können. Mit unserem Team in Karlsruhe haben wir über die Jahre etwas aufgebaut, das weit über reine Software Entwicklung hinausgeht. Wir beraten unsere Kunden, wenn neue Technologien, neue Standards oder neue regulatorische Anforderungen auf sie zukommen. Wir helfen ihnen, die richtigen Entscheidungen zu treffen – und setzen diese Entscheidungen anschließend ge",
-      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/codewrights-gmbh/consultant-industrial-cybersecurity-karlsruhe-473185",
-      "matched_keywords": [],
-      "keyword_used": "Arbeitnow API",
-      "scraped_at": "2026-03-16T19:28:33.347353",
-      "tags": [
-        "Consulting",
-        "Engineering"
-      ],
-      "posted_date": 1773230458
-    },
-    {
-      "id": "remotive_1773669697_4532",
-      "source": "Remotive",
-      "job_title": "Red Team Specialist (Offensive Security)",
-      "company": "Lumitekno Kreasi Global",
-      "location": "Worldwide",
-      "job_type": "Remote / Online",
-      "salary": "$65K - $80K",
-      "job_description_snippet": "Red Team Specialist (Offensive Security) – Remote We are seeking an experienced Red Team / Offensive Security Specialist to support ongoing security testing activities, with a primary focus on web-based exploitation and shell access validation. This is a long-term, fully remote role. Full-time availability is preferred; part-time candidates may be considered based on performance and consistency. Location – Remote (Global) Key Responsibilities : Conduct authorized offensive security testing focus",
-      "full_jd_url": "https://remotive.com/remote-jobs/devops/red-team-specialist-offensive-security-2088637",
-      "matched_keywords": [
-        "Red Team"
-      ],
-      "keyword_used": "Remotive: devops-sysadmin",
-      "scraped_at": "2026-03-16T19:31:37.489995",
+      "keyword_used": "RemoteOK API",
+      "scraped_at": "2026-03-27T11:47:40.274408",
       "tags": [
         "security",
-        "SOLID",
-        "testing",
-        "shell",
-        "CMS"
+        "design",
+        "amazon",
+        "consult",
+        "technical",
+        "developer",
+        "software",
+        "growth",
+        "lead",
+        "senior",
+        "engineer",
+        "engineering",
+        "e-commerce",
+        "digital nomad"
       ],
-      "posted_date": "2026-02-23T10:52:54"
+      "posted_date": "2026-03-19T00:00:13+00:00"
+    },
+    {
+      "id": "remoteok_1774592260_6951",
+      "source": "RemoteOK",
+      "job_title": "Senior Security Engineer",
+      "company": "Loancrate",
+      "location": "Remote/Global",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "What is Loancrate?We started Loancrate to make home-buying simpler and less expensive for lenders and borrowers (us!). Today, mortgage lenders are stuck running their companies on software products built 20 years ago. These products are slow, unstable, and don't lead to material improvements in efficiency. When using these systems, the average human cost to originate a loan is still over $11,000.Loancrate builds AI-native tooling to automate mortgage workflows. Our ultimate goal is fully automated origination, which has the potential to save lenders over $16B in operating expense per year.Sinc",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-senior-security-engineer-loancrate-1130795",
+      "matched_keywords": [
+        "Security Engineer"
+      ],
+      "keyword_used": "RemoteOK API",
+      "scraped_at": "2026-03-27T11:47:40.315267",
+      "tags": [
+        "infosec",
+        "Terraform",
+        "docker",
+        "postgres",
+        "javascript",
+        "typescript"
+      ],
+      "posted_date": "2026-03-16T13:53:18+00:00"
+    },
+    {
+      "id": "remoteok_1774592260_4222",
+      "source": "RemoteOK",
+      "job_title": "Senior Sales Engineer Data & AI Security",
+      "company": "Veeam Software",
+      "location": "Saint Louis, MO, USA",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "Veeam is the Data and AI Trust Company, specializing in helping organizations ensure their data and AI are fully understood, secured, and resilient to enable the acceleration of safe AI at scale. As the market leader in both data resilience and data security posture management, Veeam is built for the convergence of identity, data, security, and AI risk. Headquartered in Seattle with offices in more than 30 countries, Veeam protects over 550,000 customers worldwide, who trust Veeam to keep their businesses running. Join us as we go fearlessly forward together, growing, learning, and making a re",
+      "full_jd_url": "https://remoteOK.com/remote-jobs/remote-senior-sales-engineer-data-ai-security-veeam-software-1130787",
+      "matched_keywords": [],
+      "keyword_used": "RemoteOK API",
+      "scraped_at": "2026-03-27T11:47:40.324240",
+      "tags": [
+        "security",
+        "dev",
+        "leader",
+        "senior",
+        "sales",
+        "go",
+        "engineer",
+        "digital nomad"
+      ],
+      "posted_date": "2026-03-15T16:00:07+00:00"
+    },
+    {
+      "id": "arbeitnow_1774592283_9321",
+      "source": "Arbeitnow",
+      "job_title": "Cyber Security Solutions Architect / Pentesting (m/w/d)",
+      "company": "Cyberguard Connect",
+      "location": "Berlin",
+      "job_type": "Remote / Online",
+      "salary": "Not listed",
+      "job_description_snippet": "Hast du Interesse, bei der Entwicklung innovativer Sicherheitslösungen zur Simulation realer Cyberangriffe mitzuwirken und Unternehmen dabei zu unterstützen, ihre Cyber Resilience nachhaltig zu stärken? In einem dynamischen, wachstumsstarken Umfeld arbeitest du an der Schnittstelle von Technologie, Kundenberatung und Security-Expertise. Aufgaben Technische Beratung und Betreuung von Kunden im Bereich Cyber Security & Penetration Testing Design und Implementierung von Lösungen in komplexen IT-Umg",
+      "full_jd_url": "https://www.arbeitnow.com/jobs/companies/cyberguard-connect/cyber-security-solutions-architect-pentesting-berlin-233985",
+      "matched_keywords": [],
+      "keyword_used": "Arbeitnow API",
+      "scraped_at": "2026-03-27T11:48:03.654163",
+      "tags": [
+        "Remote",
+        "IT Security"
+      ],
+      "posted_date": 1774366229
     }
   ]
 }
